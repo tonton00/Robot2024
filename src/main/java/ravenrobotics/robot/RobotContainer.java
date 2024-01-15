@@ -33,19 +33,20 @@ public class RobotContainer
   public RobotContainer() 
   {
     //Set the default command to the drive command so the robot can always drive.
-    driveSubsystem.setDefaultCommand(getAutonomousCommand());
+    driveSubsystem.setDefaultCommand(driveCommand);
     //Configure configured controller bindings.
     configureBindings();
   }
 
   private void configureBindings()
   {
-    //TODO: Toggle field relative;
-    //driverController.x().onTrue(new InstantCommand((Runnable) toggleFieldRelative()));
+    //Set the X button on the driver controller to toggle whether we are driving field relative.
+    driverController.x().onTrue(new InstantCommand(() -> toggleFieldRelative()));
   }
 
   private void toggleFieldRelative()
   {
+    //Toggle field relative (if true set false, if false set true)
     if (isFieldRelative)
     {
       isFieldRelative = false;

@@ -21,6 +21,14 @@ public class DriveCommand extends Command
     //Limiters so we don't break the chassis by instantly applying power.
     private final SlewRateLimiter xLimiter, yLimiter, tLimiter;
 
+    /**
+     * Command to drive the robot using joystick axes.
+     * @param driveSubsystem The drivetrain subsystem.
+     * @param strafeSpeed The axis for moving left/right.
+     * @param forwardSpeed The axis for moving forward/backward.
+     * @param rotationSpeed The axis for rotating.
+     * @param isFieldRelative The boolean for whether to drive field relative.
+     */
     public DriveCommand(DriveSubsystem driveSubsystem, DoubleSupplier strafeSpeed, DoubleSupplier forwardSpeed, DoubleSupplier rotationSpeed, BooleanSupplier isFieldRelative)
     {
         //Initialize subsystem instance.
