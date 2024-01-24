@@ -12,16 +12,34 @@ import ravenrobotics.robot.util.Conversions;
 
 public class DriveSubsystem extends SubsystemBase
 {
-    //Drivetrain motors. Configured for use with a NEO motor, which is brushless.
+    //Drivetrain motors. Configured for use with a Vortex motor, which is brushless.
     private final CANSparkMax frontLeft = new CANSparkMax(DrivetrainConstants.kFrontLeftMotor, MotorType.kBrushless);
     private final CANSparkMax frontRight = new CANSparkMax(DrivetrainConstants.kFrontRightMotor, MotorType.kBrushless);
     private final CANSparkMax backLeft = new CANSparkMax(DrivetrainConstants.kBackLeftMotor, MotorType.kBrushless);
     private final CANSparkMax backRight = new CANSparkMax(DrivetrainConstants.kBackRightMotor, MotorType.kBrushless);
 
+    //Instance object for simplifying getting the subsystem for commands.
+    private static DriveSubsystem instance;
+
+    /**
+     * Get the active instance of DriveSubsystem.
+     * @return The DriveSubsystem instance.
+     */
+    public static DriveSubsystem getInstance()
+    {
+        //If the instance doesn't exist yet, create it.
+        if (instance == null)
+        {
+            instance = new DriveSubsystem();
+        }
+        //Return the instance.
+        return instance;
+    }
+
     /**
      * Subsystem for controlling the drivetrain of the robot.
      */
-    public DriveSubsystem()
+    private DriveSubsystem()
     {
         //Configure the motors for use.
         configMotors();
@@ -34,7 +52,6 @@ public class DriveSubsystem extends SubsystemBase
     public void drive(ChassisSpeeds speeds)
     {
         MecanumDriveWheelSpeeds wheelSpeeds = KinematicsConstants.kDriveKinematics.toWheelSpeeds(speeds);
-        //TODO: Figure out the max speed of real robot.
         wheelSpeeds.desaturate(DrivetrainConstants.kDriveMaxSpeedMPS);
         
         //Convert the speeds into voltages and apply them to the motors.

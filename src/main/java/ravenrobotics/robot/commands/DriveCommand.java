@@ -8,11 +8,14 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj2.command.Command;
 import ravenrobotics.robot.Constants.DrivetrainConstants;
 import ravenrobotics.robot.subsystems.DriveSubsystem;
+import ravenrobotics.robot.subsystems.IMUSubsystem;
 
 public class DriveCommand extends Command
 {
     //The drive subsystem so the drivetrain can be driven ;).
     private final DriveSubsystem driveSubsystem;
+
+    private final IMUSubsystem imuSubsystem;
     
     //Suppliers for joystick values and whether to drive field relative.
     private final DoubleSupplier xSpeed, ySpeed, tSpeed;
@@ -29,10 +32,11 @@ public class DriveCommand extends Command
      * @param rotationSpeed The axis for rotating.
      * @param isFieldRelative The boolean for whether to drive field relative.
      */
-    public DriveCommand(DriveSubsystem driveSubsystem, DoubleSupplier strafeSpeed, DoubleSupplier forwardSpeed, DoubleSupplier rotationSpeed, BooleanSupplier isFieldRelative)
+    public DriveCommand(DoubleSupplier strafeSpeed, DoubleSupplier forwardSpeed, DoubleSupplier rotationSpeed, BooleanSupplier isFieldRelative)
     {
-        //Initialize subsystem instance.
-        this.driveSubsystem = driveSubsystem;
+        //Initialize subsystem instances.
+        this.driveSubsystem = DriveSubsystem.getInstance();
+        this.imuSubsystem = IMUSubsystem.getInstance();
 
         //Initialize double suppliers (getting joystick values)
         this.xSpeed = strafeSpeed;
@@ -71,8 +75,7 @@ public class DriveCommand extends Command
         //Convert the chassis speeds if driving field-oriented.
         if (isFieldRelative.getAsBoolean())
         {
-            //TODO: IMU implementaiton
-            targetSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(targetSpeeds, null);
+            targetSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(targetSpeeds, imuSubsystem.getYaw());
         }
 
         //Drive the subsystem.

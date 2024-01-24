@@ -14,8 +14,6 @@ import ravenrobotics.robot.subsystems.DriveSubsystem;
 
 public class RobotContainer 
 {
-  //Drive subsystem for driving the drivebase.
-  private final DriveSubsystem driveSubsystem = new DriveSubsystem();
   //Driver controller (drives the robot around).
   private final CommandXboxController driverController = new CommandXboxController(DriverStationConstants.kDriverPort);
 
@@ -24,16 +22,15 @@ public class RobotContainer
 
   //Main drive command.
   private final DriveCommand driveCommand = new DriveCommand(
-    driveSubsystem,
     () -> -driverController.getLeftX(),
     () -> -driverController.getLeftY(),
     () -> -driverController.getLeftX(),
     () -> isFieldRelative);
 
-  public RobotContainer() 
+  public RobotContainer()
   {
     //Set the default command to the drive command so the robot can always drive.
-    driveSubsystem.setDefaultCommand(driveCommand);
+    DriveSubsystem.getInstance().setDefaultCommand(driveCommand);
     //Configure configured controller bindings.
     configureBindings();
   }
