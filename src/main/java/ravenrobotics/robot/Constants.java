@@ -24,8 +24,10 @@ public class Constants
         /////////////////////
         ////Invert Motors////
         ////////////////////
-        public static final boolean invertLeftSide = true;
-        public static final boolean invertRightSide = false;
+        public static final boolean kInvertFrontLeftSide = true;
+        public static final boolean kInvertFrontRightSide = false;
+        public static final boolean kInvertBackLeftSide = false;
+        public static final boolean kInvertBackRightSide = true;
         /////////////////////
         /////Max Voltage/////
         /////////////////////

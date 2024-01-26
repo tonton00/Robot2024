@@ -73,9 +73,9 @@ public class DriveSubsystem extends SubsystemBase
         backRight.restoreFactoryDefaults();
 
         //Reverse the default direction of the left side so everything drives normally.
-        frontLeft.setInverted(DrivetrainConstants.invertLeftSide);
-        backLeft.setInverted(DrivetrainConstants.invertLeftSide);
-        frontRight.setInverted(DrivetrainConstants.invertRightSide);
-        backRight.setInverted(DrivetrainConstants.invertRightSide);
+        frontLeft.setInverted(DrivetrainConstants.kInvertFrontLeftSide);
+        backLeft.setInverted(DrivetrainConstants.kInvertBackLeftSide);
+        frontRight.setInverted(DrivetrainConstants.kInvertFrontRightSide);
+        backRight.setInverted(DrivetrainConstants.kInvertBackRightSide);
     }
 }
