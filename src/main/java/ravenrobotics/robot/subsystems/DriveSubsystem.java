@@ -77,5 +77,10 @@ public class DriveSubsystem extends SubsystemBase
         backLeft.setInverted(DrivetrainConstants.kInvertBackLeftSide);
         frontRight.setInverted(DrivetrainConstants.kInvertFrontRightSide);
         backRight.setInverted(DrivetrainConstants.kInvertBackRightSide);
+
+        frontLeft.burnFlash();
+        backLeft.burnFlash();
+        frontRight.burnFlash();
+        backRight.burnFlash();
     }
 }

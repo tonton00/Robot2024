@@ -47,9 +47,9 @@ public class DriveCommand extends Command
         this.isFieldRelative = isFieldRelative;
 
         //Initialize SlewRateLimiters so we don't acclerate too quickly.
-        xLimiter = new SlewRateLimiter(0.02);
-        yLimiter = new SlewRateLimiter(0.02);
-        tLimiter = new SlewRateLimiter(0.02);
+        xLimiter = new SlewRateLimiter(1.5);
+        yLimiter = new SlewRateLimiter(1.5);
+        tLimiter = new SlewRateLimiter(1.5);
 
         //Add the subsystem as a requirement for the command, so the subsystem isn't being controlled by two different commands at once.
         addRequirements(driveSubsystem);
