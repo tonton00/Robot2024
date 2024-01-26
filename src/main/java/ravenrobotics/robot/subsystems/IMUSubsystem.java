@@ -4,8 +4,10 @@ import com.ctre.phoenix6.configs.Pigeon2Configuration;
 import com.ctre.phoenix6.hardware.Pigeon2;
 
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import ravenrobotics.robot.Constants.IMUConstants;
+import ravenrobotics.robot.util.Telemetry;
 
 public class IMUSubsystem extends SubsystemBase 
 {
@@ -14,6 +16,9 @@ public class IMUSubsystem extends SubsystemBase
 
     //Instance object for simplifying getting the subsystem in commands.
     private static IMUSubsystem instance;
+
+    //Shuffleboard (telemetry)
+    private GenericEntry imuHeading = Telemetry.teleopTab.add("IMU Heading", 0).getEntry();
 
     /**
      * Get the active instance of the IMUSubsystem.
@@ -57,6 +62,13 @@ public class IMUSubsystem extends SubsystemBase
     public void zeroYaw()
     {
         imu.setYaw(0.0);
+    }
+
+    @Override
+    public void periodic()
+    {
+        //Update IMU heading on Shuffleboard
+        imuHeading.setDouble(getYaw().getDegrees());
     }
 
     /**

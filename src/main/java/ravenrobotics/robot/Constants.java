@@ -37,6 +37,7 @@ public class Constants
         /////////////////////
         //TODO: Find actual speed of the drivetrain, using number from online for now.
         public static final double kDriveMaxSpeedMPS = Units.feetToMeters(13.87);
+        public static final double kMotorRampRate = 0.02;
     }
     //Constants for the Pigeon2 IMU, such as the ID and various configuration settings.
     public static class IMUConstants
@@ -61,7 +62,7 @@ public class Constants
     public static class KinematicsConstants
     {
         //Offset from the center of the robot to a wheel.
-        public static final double kOffset = Units.inchesToMeters(28) / 2;
+        public static final double kOffset = Units.inchesToMeters(30) / 2;
         //Translation2d offsets for each wheel.
         public static final Translation2d kFrontLeftOffset = new Translation2d(kOffset, kOffset);
         public static final Translation2d kFrontRightOffset = new Translation2d(kOffset, -kOffset);

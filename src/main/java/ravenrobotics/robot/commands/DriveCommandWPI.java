@@ -11,7 +11,7 @@ import ravenrobotics.robot.subsystems.DriveSubsystem;
 import ravenrobotics.robot.subsystems.IMUSubsystem;
 import ravenrobotics.robot.util.Telemetry;
 
-public class DriveCommand extends Command
+public class DriveCommandWPI extends Command
 {
     //The drive subsystem so the drivetrain can be driven ;).
     private final DriveSubsystem driveSubsystem;
@@ -33,7 +33,7 @@ public class DriveCommand extends Command
      * @param rotationSpeed The axis for rotating.
      * @param isFieldRelative The boolean for whether to drive field relative.
      */
-    public DriveCommand(DoubleSupplier strafeSpeed, DoubleSupplier forwardSpeed, DoubleSupplier rotationSpeed, BooleanSupplier isFieldRelative)
+    public DriveCommandWPI(DoubleSupplier strafeSpeed, DoubleSupplier forwardSpeed, DoubleSupplier rotationSpeed, BooleanSupplier isFieldRelative)
     {
         //Initialize subsystem instances.
         this.driveSubsystem = DriveSubsystem.getInstance();
@@ -69,19 +69,10 @@ public class DriveCommand extends Command
         double xSpeedMPS, ySpeedMPS, tSpeedMPS;
 
         //Get the target strafe, forward/backward, and rotation speeds.
-        xSpeedMPS = xLimiter.calculate(xSpeed.getAsDouble()) * DrivetrainConstants.kDriveMaxSpeedMPS;
-        ySpeedMPS = yLimiter.calculate(ySpeed.getAsDouble()) * DrivetrainConstants.kDriveMaxSpeedMPS;
-        tSpeedMPS = tLimiter.calculate(tSpeed.getAsDouble()) * DrivetrainConstants.kDriveMaxSpeedMPS;
+        xSpeedMPS = xLimiter.calculate(xSpeed.getAsDouble());
+        ySpeedMPS = yLimiter.calculate(ySpeed.getAsDouble());
+        tSpeedMPS = tLimiter.calculate(tSpeed.getAsDouble());
 
-        ChassisSpeeds targetSpeeds = new ChassisSpeeds(xSpeedMPS, ySpeedMPS, tSpeedMPS);
-
-        //Convert the chassis speeds if driving field-oriented.
-        if (isFieldRelative.getAsBoolean())
-        {
-            targetSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(targetSpeeds, imuSubsystem.getYaw());
-        }
-
-        //Drive the subsystem.
-        driveSubsystem.drive(targetSpeeds);
+        driveSubsystem.driveWPI(xSpeedMPS, ySpeedMPS, tSpeedMPS, imuSubsystem.getYaw(), isFieldRelative.getAsBoolean());
     }
 }

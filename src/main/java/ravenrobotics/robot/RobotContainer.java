@@ -4,13 +4,18 @@
 
 package ravenrobotics.robot;
 
+import edu.wpi.first.networktables.GenericEntry;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import ravenrobotics.robot.Constants.DriverStationConstants;
 import ravenrobotics.robot.commands.DriveCommand;
+import ravenrobotics.robot.commands.DriveCommandWPI;
 import ravenrobotics.robot.subsystems.DriveSubsystem;
+import ravenrobotics.robot.subsystems.IMUSubsystem;
+import ravenrobotics.robot.util.Telemetry;
 
 public class RobotContainer 
 {
@@ -18,19 +23,29 @@ public class RobotContainer
   private final CommandXboxController driverController = new CommandXboxController(DriverStationConstants.kDriverPort);
 
   //Whether to drive field relative or not.
-  private boolean isFieldRelative = true;
+  public boolean isFieldRelative = false;
+  private GenericEntry isFieldRelativeEntry = Telemetry.teleopTab.add("Field Relative", false).getEntry();
+  private final SendableChooser<Command> chooser = new SendableChooser<Command>();
 
   //Main drive command.
   private final DriveCommand driveCommand = new DriveCommand(
     () -> -driverController.getLeftX(),
     () -> -driverController.getLeftY(),
+    () -> -driverController.getRightX(),
+    () -> isFieldRelative);
+
+  private final DriveCommandWPI otherDriveCommand = new DriveCommandWPI(
     () -> -driverController.getLeftX(),
+    () -> -driverController.getLeftY(),
+    () -> -driverController.getRightX(),
     () -> isFieldRelative);
 
   public RobotContainer()
   {
-    //Set the default command to the drive command so the robot can always drive.
-    DriveSubsystem.getInstance().setDefaultCommand(driveCommand);
+    chooser.addOption("Custom", driveCommand);
+    chooser.addOption("WPI", otherDriveCommand);
+    Telemetry.teleopTab.add("Drive Command", chooser);
+    isFieldRelativeEntry.setBoolean(isFieldRelative);
     //Configure configured controller bindings.
     configureBindings();
   }
@@ -39,6 +54,7 @@ public class RobotContainer
   {
     //Set the X button on the driver controller to toggle whether we are driving field relative.
     driverController.x().onTrue(new InstantCommand(() -> toggleFieldRelative()));
+    driverController.y().onTrue(new InstantCommand(() -> IMUSubsystem.getInstance().zeroYaw()));
   }
 
   private void toggleFieldRelative()
@@ -47,14 +63,22 @@ public class RobotContainer
     if (isFieldRelative)
     {
       isFieldRelative = false;
+      isFieldRelativeEntry.setBoolean(isFieldRelative);
     }
     else
     {
       isFieldRelative = true;
+      isFieldRelativeEntry.setBoolean(isFieldRelative);
     }
   }
 
   public Command getAutonomousCommand() {
     return Commands.print("No autonomous command configured");
+  }
+
+  public void setDriveCommand()
+  {
+    Command option = chooser.getSelected();
+    DriveSubsystem.getInstance().setDefaultCommand(option);
   }
 }

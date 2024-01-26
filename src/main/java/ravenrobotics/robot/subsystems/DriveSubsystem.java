@@ -3,12 +3,15 @@ package ravenrobotics.robot.subsystems;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.MecanumDriveWheelSpeeds;
+import edu.wpi.first.networktables.GenericEntry;
+import edu.wpi.first.wpilibj.drive.MecanumDrive;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import ravenrobotics.robot.Constants.DrivetrainConstants;
 import ravenrobotics.robot.Constants.KinematicsConstants;
-import ravenrobotics.robot.util.Conversions;
+import ravenrobotics.robot.util.Telemetry;
 
 public class DriveSubsystem extends SubsystemBase
 {
@@ -20,6 +23,20 @@ public class DriveSubsystem extends SubsystemBase
 
     //Instance object for simplifying getting the subsystem for commands.
     private static DriveSubsystem instance;
+
+    ///Shuffleboard (telemetry)
+    //Target speeds
+    private GenericEntry frontLeftTargetSpeed = Telemetry.teleopTab.add("FL Target Speed", 0).getEntry();
+    private GenericEntry frontRightTargetSpeed = Telemetry.teleopTab.add("FR Target Speed", 0).getEntry();
+    private GenericEntry backLeftTargetSpeed = Telemetry.teleopTab.add("BL Target Speed", 0).getEntry();
+    private GenericEntry backRightTargetSpeed = Telemetry.teleopTab.add("BR Target Speed", 0).getEntry();
+    //Target power
+    private GenericEntry frontLeftPower = Telemetry.teleopTab.add("FL Target Power", 0).getEntry();
+    private GenericEntry frontRightPower = Telemetry.teleopTab.add("FR Target Power", 0).getEntry();
+    private GenericEntry backLeftPower = Telemetry.teleopTab.add("BL Target Power", 0).getEntry();
+    private GenericEntry backRightPower = Telemetry.teleopTab.add("BR Target Power", 0).getEntry();
+
+    private final MecanumDrive mecDrive = new MecanumDrive(frontLeft, backLeft, frontRight, backRight);
 
     /**
      * Get the active instance of DriveSubsystem.
@@ -54,12 +71,41 @@ public class DriveSubsystem extends SubsystemBase
         MecanumDriveWheelSpeeds wheelSpeeds = KinematicsConstants.kDriveKinematics.toWheelSpeeds(speeds);
         wheelSpeeds.desaturate(DrivetrainConstants.kDriveMaxSpeedMPS);
         
-        //Convert the speeds into voltages and apply them to the motors.
-        frontLeft.setVoltage(Conversions.MPSToVoltage(wheelSpeeds.frontLeftMetersPerSecond));
-        frontRight.setVoltage(Conversions.MPSToVoltage(wheelSpeeds.frontRightMetersPerSecond));
-        backLeft.setVoltage(Conversions.MPSToVoltage(wheelSpeeds.rearLeftMetersPerSecond));
-        backRight.setVoltage(Conversions.MPSToVoltage(wheelSpeeds.rearRightMetersPerSecond));
+        //Convert the speeds into the range for the motors, then set them.
+        frontLeft.set(wheelSpeeds.frontLeftMetersPerSecond / DrivetrainConstants.kDriveMaxSpeedMPS);
+        frontRight.set(wheelSpeeds.frontRightMetersPerSecond / DrivetrainConstants.kDriveMaxSpeedMPS);
+        backLeft.set(wheelSpeeds.rearLeftMetersPerSecond / DrivetrainConstants.kDriveMaxSpeedMPS);
+        backRight.set(wheelSpeeds.rearRightMetersPerSecond / DrivetrainConstants.kDriveMaxSpeedMPS);
+
+        mecDrive.feed();
+
+        //Update Shuffleboard with all the target speeds.
+        frontLeftTargetSpeed.setDouble(wheelSpeeds.frontLeftMetersPerSecond / DrivetrainConstants.kDriveMaxSpeedMPS);
+        frontRightTargetSpeed.setDouble(wheelSpeeds.frontRightMetersPerSecond / DrivetrainConstants.kDriveMaxSpeedMPS);
+        backLeftTargetSpeed.setDouble(wheelSpeeds.rearLeftMetersPerSecond / DrivetrainConstants.kDriveMaxSpeedMPS);
+        backRightTargetSpeed.setDouble(wheelSpeeds.rearRightMetersPerSecond / DrivetrainConstants.kDriveMaxSpeedMPS);
+        //Update Shuffleboard with powers.
+        frontLeftPower.setDouble(frontLeft.get());
+        frontRightPower.setDouble(frontRight.get());
+        backLeftPower.setDouble(backLeft.get());
+        backRightPower.setDouble(backRight.get());
     }
+
+    public void driveWPI(double strafe, double forward, double rotation, Rotation2d angle, boolean isFieldRelative)
+    {
+        if (isFieldRelative)
+        {
+            mecDrive.driveCartesian(strafe, forward, rotation, angle);
+        }
+        else
+        {
+            mecDrive.driveCartesian(strafe, forward, rotation);
+        }
+    }
+
+    @Override
+    public void periodic()
+    {}
 
     /**
      * Configure the drivetrain motors for use.
@@ -78,6 +124,13 @@ public class DriveSubsystem extends SubsystemBase
         frontRight.setInverted(DrivetrainConstants.kInvertFrontRightSide);
         backRight.setInverted(DrivetrainConstants.kInvertBackRightSide);
 
+        //Set the ramp rate of the motors.
+        frontLeft.setOpenLoopRampRate(DrivetrainConstants.kMotorRampRate);
+        backLeft.setOpenLoopRampRate(DrivetrainConstants.kMotorRampRate);
+        frontRight.setOpenLoopRampRate(DrivetrainConstants.kMotorRampRate);
+        backRight.setOpenLoopRampRate(DrivetrainConstants.kMotorRampRate);
+
+        //Save the configuration to the motors.
         frontLeft.burnFlash();
         backLeft.burnFlash();
         frontRight.burnFlash();
