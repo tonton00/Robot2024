@@ -2,9 +2,11 @@ package ravenrobotics.robot.subsystems;
 
 import com.ctre.phoenix6.configs.Pigeon2Configuration;
 import com.ctre.phoenix6.hardware.Pigeon2;
+import com.ctre.phoenix6.sim.Pigeon2SimState;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.networktables.GenericEntry;
+import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import ravenrobotics.robot.Constants.IMUConstants;
 import ravenrobotics.robot.util.Telemetry;
@@ -19,6 +21,8 @@ public class IMUSubsystem extends SubsystemBase
 
     //Shuffleboard (telemetry)
     private GenericEntry imuHeading = Telemetry.teleopTab.add("IMU Heading", 0).getEntry();
+
+    private Pigeon2SimState simIMU = imu.getSimState();
 
     /**
      * Get the active instance of the IMUSubsystem.
@@ -98,5 +102,11 @@ public class IMUSubsystem extends SubsystemBase
 
         //Apply the config.
         imu.getConfigurator().apply(config);
+    }
+
+    @Override
+    public void simulationPeriodic()
+    {
+        simIMU.setSupplyVoltage(RobotController.getBatteryVoltage());
     }
 }

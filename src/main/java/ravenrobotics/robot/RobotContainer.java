@@ -9,6 +9,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.button.CommandJoystick;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import ravenrobotics.robot.Constants.DriverStationConstants;
 import ravenrobotics.robot.commands.DriveCommand;
@@ -21,6 +22,7 @@ public class RobotContainer
 {
   //Driver controller (drives the robot around).
   private final CommandXboxController driverController = new CommandXboxController(DriverStationConstants.kDriverPort);
+  private final CommandJoystick driverJoystick = new CommandJoystick(DriverStationConstants.kDriverPort);
 
   //Whether to drive field relative or not.
   public boolean isFieldRelative = false;
@@ -35,15 +37,16 @@ public class RobotContainer
     () -> isFieldRelative);
 
   private final DriveCommandWPI otherDriveCommand = new DriveCommandWPI(
-    () -> -driverController.getLeftX(),
-    () -> -driverController.getLeftY(),
-    () -> -driverController.getRightX(),
+    () -> -driverJoystick.getX(),
+    () -> -driverJoystick.getY(),
+    () -> -driverJoystick.getZ(),
     () -> isFieldRelative);
 
   public RobotContainer()
   {
     chooser.addOption("Custom", driveCommand);
     chooser.addOption("WPI", otherDriveCommand);
+    chooser.setDefaultOption("Custom", driveCommand);
     Telemetry.teleopTab.add("Drive Command", chooser);
     isFieldRelativeEntry.setBoolean(isFieldRelative);
     //Configure configured controller bindings.
@@ -53,8 +56,10 @@ public class RobotContainer
   private void configureBindings()
   {
     //Set the X button on the driver controller to toggle whether we are driving field relative.
-    driverController.x().onTrue(new InstantCommand(() -> toggleFieldRelative()));
-    driverController.y().onTrue(new InstantCommand(() -> IMUSubsystem.getInstance().zeroYaw()));
+    // driverController.x().onTrue(new InstantCommand(() -> toggleFieldRelative()));
+    // driverController.y().onTrue(new InstantCommand(() -> IMUSubsystem.getInstance().zeroYaw()));
+    driverJoystick.button(2).onTrue(new InstantCommand(() -> toggleFieldRelative()));
+    driverJoystick.button(3).onTrue(new InstantCommand(() -> IMUSubsystem.getInstance().zeroYaw()));
   }
 
   private void toggleFieldRelative()

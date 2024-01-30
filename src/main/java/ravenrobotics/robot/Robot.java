@@ -4,6 +4,8 @@
 
 package ravenrobotics.robot;
 
+import com.revrobotics.REVPhysicsSim;
+
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.TimedRobot;
@@ -77,4 +79,16 @@ public class Robot extends TimedRobot {
 
   @Override
   public void testExit() {}
+
+  @Override
+  public void simulationInit()
+  {
+    m_robotContainer.setDriveCommand();
+  }
+
+  @Override
+  public void simulationPeriodic()
+  {
+    REVPhysicsSim.getInstance().run();
+  }
 }

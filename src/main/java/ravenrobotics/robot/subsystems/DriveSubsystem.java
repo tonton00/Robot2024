@@ -1,14 +1,18 @@
 package ravenrobotics.robot.subsystems;
 
 import com.revrobotics.CANSparkMax;
+import com.revrobotics.REVPhysicsSim;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.MecanumDriveWheelSpeeds;
+import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.wpilibj.drive.MecanumDrive;
+import edu.wpi.first.wpilibj.simulation.BatterySim;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import ravenrobotics.robot.Robot;
 import ravenrobotics.robot.Constants.DrivetrainConstants;
 import ravenrobotics.robot.Constants.KinematicsConstants;
 import ravenrobotics.robot.util.Telemetry;
@@ -60,6 +64,12 @@ public class DriveSubsystem extends SubsystemBase
     {
         //Configure the motors for use.
         configMotors();
+
+        //Setup for simulation
+        if(Robot.isSimulation())
+        {
+            addMotorsToSim();
+        }
     }
 
     /**
@@ -77,6 +87,7 @@ public class DriveSubsystem extends SubsystemBase
         backLeft.set(wheelSpeeds.rearLeftMetersPerSecond / DrivetrainConstants.kDriveMaxSpeedMPS);
         backRight.set(wheelSpeeds.rearRightMetersPerSecond / DrivetrainConstants.kDriveMaxSpeedMPS);
 
+        //Update the MecanumDrive object so that WPILib doesn't get angry :).
         mecDrive.feed();
 
         //Update Shuffleboard with all the target speeds.
@@ -107,6 +118,24 @@ public class DriveSubsystem extends SubsystemBase
     public void periodic()
     {}
 
+    @Override
+    public void simulationPeriodic()
+    {
+        //Update the BatterySim battery.
+        BatterySim.calculateDefaultBatteryLoadedVoltage(
+            frontLeft.get() * DrivetrainConstants.kDriveMaxVoltage,
+            frontRight.get() * DrivetrainConstants.kDriveMaxVoltage,
+            backLeft.get() * DrivetrainConstants.kDriveMaxVoltage,
+            backRight.get() * DrivetrainConstants.kDriveMaxVoltage);
+    }
+    
+    public void addMotorsToSim()
+    {
+        REVPhysicsSim.getInstance().addSparkMax(frontLeft, DCMotor.getNEO(1));
+        REVPhysicsSim.getInstance().addSparkMax(frontRight, DCMotor.getNEO(1));
+        REVPhysicsSim.getInstance().addSparkMax(backLeft, DCMotor.getNEO(1));
+        REVPhysicsSim.getInstance().addSparkMax(backLeft, DCMotor.getNEO(1));
+    }
     /**
      * Configure the drivetrain motors for use.
      */
