@@ -2,6 +2,7 @@ package ravenrobotics.robot.subsystems;
 
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.REVPhysicsSim;
+import com.revrobotics.CANSparkBase.IdleMode;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -91,10 +92,10 @@ public class DriveSubsystem extends SubsystemBase
         mecDrive.feed();
 
         //Update Shuffleboard with all the target speeds.
-        frontLeftTargetSpeed.setDouble(wheelSpeeds.frontLeftMetersPerSecond / DrivetrainConstants.kDriveMaxSpeedMPS);
-        frontRightTargetSpeed.setDouble(wheelSpeeds.frontRightMetersPerSecond / DrivetrainConstants.kDriveMaxSpeedMPS);
-        backLeftTargetSpeed.setDouble(wheelSpeeds.rearLeftMetersPerSecond / DrivetrainConstants.kDriveMaxSpeedMPS);
-        backRightTargetSpeed.setDouble(wheelSpeeds.rearRightMetersPerSecond / DrivetrainConstants.kDriveMaxSpeedMPS);
+        frontLeftTargetSpeed.setDouble(wheelSpeeds.frontLeftMetersPerSecond);
+        frontRightTargetSpeed.setDouble(wheelSpeeds.frontRightMetersPerSecond);
+        backLeftTargetSpeed.setDouble(wheelSpeeds.rearLeftMetersPerSecond);
+        backRightTargetSpeed.setDouble(wheelSpeeds.rearRightMetersPerSecond);
         //Update Shuffleboard with powers.
         frontLeftPower.setDouble(frontLeft.get());
         frontRightPower.setDouble(frontRight.get());
@@ -158,6 +159,12 @@ public class DriveSubsystem extends SubsystemBase
         backLeft.setOpenLoopRampRate(DrivetrainConstants.kMotorRampRate);
         frontRight.setOpenLoopRampRate(DrivetrainConstants.kMotorRampRate);
         backRight.setOpenLoopRampRate(DrivetrainConstants.kMotorRampRate);
+
+        //Set the idle mode to brake so that the robot does a better job of staying in place.
+        frontLeft.setIdleMode(IdleMode.kBrake);
+        frontRight.setIdleMode(IdleMode.kBrake);
+        backLeft.setIdleMode(IdleMode.kBrake);
+        backRight.setIdleMode(IdleMode.kBrake);
 
         //Save the configuration to the motors.
         frontLeft.burnFlash();
