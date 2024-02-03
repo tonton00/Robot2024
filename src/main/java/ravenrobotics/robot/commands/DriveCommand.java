@@ -5,6 +5,7 @@ import java.util.function.DoubleSupplier;
 
 import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.networktables.GenericEntry;
 import edu.wpi.first.wpilibj2.command.Command;
 import ravenrobotics.robot.Constants.DrivetrainConstants;
 import ravenrobotics.robot.subsystems.DriveSubsystem;
@@ -19,11 +20,22 @@ public class DriveCommand extends Command
     private final IMUSubsystem imuSubsystem;
     
     //Suppliers for joystick values and whether to drive field relative.
-    private final DoubleSupplier xSpeed, ySpeed, tSpeed;
+    private final DoubleSupplier xSpeed, ySpeed, tSpeed, maxSpeed;
     private final BooleanSupplier isFieldRelative;
 
     //Limiters so we don't break the chassis by instantly applying power.
     private final SlewRateLimiter xLimiter, yLimiter, tLimiter;
+
+    //Max speed entry.
+    private final GenericEntry maxSpeedEntry = Telemetry.teleopTab.add("Max Speed", DrivetrainConstants.kDriveMaxSpeedMPS * 0.1).getEntry();
+    //Axis entries.
+    private final GenericEntry xAxisEntry = Telemetry.teleopTab.add("X Axis", 0).getEntry();
+    private final GenericEntry yAxisEntry = Telemetry.teleopTab.add("Y Axis", 0).getEntry();
+    private final GenericEntry zAxisEntry = Telemetry.teleopTab.add("Z Axis", 0).getEntry();
+    //Axis filter entries.
+    private final GenericEntry xAxisFilterEntry = Telemetry.teleopTab.add("X Axis Filter", 0).getEntry();
+    private final GenericEntry yAxisFilterEntry = Telemetry.teleopTab.add("Y Axis Filter", 0).getEntry();
+    private final GenericEntry zAxisFilterEntry = Telemetry.teleopTab.add("Z Axis Filter", 0).getEntry();
 
     /**
      * Command to drive the robot using joystick axes.
@@ -31,9 +43,10 @@ public class DriveCommand extends Command
      * @param strafeSpeed The axis for moving left/right.
      * @param forwardSpeed The axis for moving forward/backward.
      * @param rotationSpeed The axis for rotating.
+     * @param maxSpeed The axis for controlling the max speed of the robot.
      * @param isFieldRelative The boolean for whether to drive field relative.
      */
-    public DriveCommand(DoubleSupplier strafeSpeed, DoubleSupplier forwardSpeed, DoubleSupplier rotationSpeed, BooleanSupplier isFieldRelative)
+    public DriveCommand(DoubleSupplier strafeSpeed, DoubleSupplier forwardSpeed, DoubleSupplier rotationSpeed, DoubleSupplier maxSpeed, BooleanSupplier isFieldRelative)
     {
         //Initialize subsystem instances.
         this.driveSubsystem = DriveSubsystem.getInstance();
@@ -43,6 +56,7 @@ public class DriveCommand extends Command
         this.xSpeed = strafeSpeed;
         this.ySpeed = forwardSpeed;
         this.tSpeed = rotationSpeed;
+        this.maxSpeed = maxSpeed;
 
         //Initialize boolean supplier (whether to drive field or robot relative)
         this.isFieldRelative = isFieldRelative;
@@ -66,13 +80,41 @@ public class DriveCommand extends Command
     public void execute()
     {
         //Temporary variables for the speeds.
-        double xSpeedMPS, ySpeedMPS, tSpeedMPS;
+        double xSpeedMPS, ySpeedMPS, tSpeedMPS, mSpeed;
 
         //Get the target strafe, forward/backward, and rotation speeds.
         xSpeedMPS = xLimiter.calculate(xSpeed.getAsDouble()) * DrivetrainConstants.kDriveMaxSpeedMPS;
         ySpeedMPS = yLimiter.calculate(ySpeed.getAsDouble()) * DrivetrainConstants.kDriveMaxSpeedMPS;
         tSpeedMPS = tLimiter.calculate(tSpeed.getAsDouble()) * DrivetrainConstants.kDriveMaxSpeedMPS;
 
+        //Convert the maxSpeed axis to a range of 0-1.
+        mSpeed = (maxSpeed.getAsDouble() + 1) * 0.5;
+        if (mSpeed < 0.1)
+        {
+            mSpeed += 0.1;
+        }
+
+        //Update the max speed on Shuffleboard as a percentage.
+        maxSpeedEntry.setDouble(mSpeed * 100);
+        //Update the axis data on Shuffleboard.
+        xAxisEntry.setDouble(xSpeed.getAsDouble());
+        yAxisEntry.setDouble(ySpeed.getAsDouble());
+        zAxisEntry.setDouble(tSpeed.getAsDouble());
+        //Update the filter data on Shuffleboard.
+        xAxisFilterEntry.setDouble(xLimiter.calculate(xSpeed.getAsDouble()));
+        yAxisFilterEntry.setDouble(yLimiter.calculate(ySpeed.getAsDouble()));
+        zAxisFilterEntry.setDouble(tLimiter.calculate(tSpeed.getAsDouble()));
+
+        //If we are inside the deadband limit, stop the motors and return (exit this loop).
+        if(Math.abs(xSpeed.getAsDouble()) < 0.1 && Math.abs(ySpeed.getAsDouble()) < 0.1 && Math.abs(tSpeed.getAsDouble()) < 0.1)
+        {
+            driveSubsystem.stopMotors();
+            return;
+        }
+        //Conver the max speed to a speed in meters per second.
+        mSpeed *= DrivetrainConstants.kDriveMaxSpeedMPS;
+
+        //Convert the target speeds to a chassis speed.
         ChassisSpeeds targetSpeeds = new ChassisSpeeds(xSpeedMPS, ySpeedMPS, tSpeedMPS);
 
         //Convert the chassis speeds if driving field-oriented.
@@ -80,8 +122,7 @@ public class DriveCommand extends Command
         {
             targetSpeeds = ChassisSpeeds.fromFieldRelativeSpeeds(targetSpeeds, imuSubsystem.getYaw());
         }
-
         //Drive the subsystem.
-        driveSubsystem.drive(targetSpeeds);
+        driveSubsystem.drive(targetSpeeds, mSpeed);
     }
 }

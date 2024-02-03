@@ -31,13 +31,13 @@ public class Constants
         /////////////////////
         /////Max Voltage/////
         /////////////////////
-        public static final int kDriveMaxVoltage = 10;
+        public static final int kDriveMaxVoltage = 12;
+        public static final double kDriveSysIDVoltageRampRate = 0.5;
         /////////////////////
         ///Other Constants///
         /////////////////////
         //TODO: Find actual speed of the drivetrain, using number from online for now.
         public static final double kDriveMaxSpeedMPS = Units.feetToMeters(13.87);
-        public static final double kMotorRampRate = 0.02;
     }
     //Constants for the Pigeon2 IMU, such as the ID and various configuration settings.
     public static class IMUConstants

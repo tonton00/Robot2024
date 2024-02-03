@@ -5,12 +5,11 @@ import com.revrobotics.REVPhysicsSim;
 import com.revrobotics.CANSparkBase.IdleMode;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.MecanumDriveWheelSpeeds;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.networktables.GenericEntry;
-import edu.wpi.first.wpilibj.drive.MecanumDrive;
+import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.simulation.BatterySim;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import ravenrobotics.robot.Robot;
@@ -40,8 +39,8 @@ public class DriveSubsystem extends SubsystemBase
     private GenericEntry frontRightPower = Telemetry.teleopTab.add("FR Target Power", 0).getEntry();
     private GenericEntry backLeftPower = Telemetry.teleopTab.add("BL Target Power", 0).getEntry();
     private GenericEntry backRightPower = Telemetry.teleopTab.add("BR Target Power", 0).getEntry();
-
-    private final MecanumDrive mecDrive = new MecanumDrive(frontLeft, backLeft, frontRight, backRight);
+    //Battery voltage
+    private GenericEntry batteryVoltage = Telemetry.teleopTab.add("Battery Voltage", 12).getEntry();
 
     /**
      * Get the active instance of DriveSubsystem.
@@ -77,19 +76,16 @@ public class DriveSubsystem extends SubsystemBase
      * Drive the drivetrain.
      * @param speeds The target speed of the drivetrain as a ChassisSpeeds object.
      */
-    public void drive(ChassisSpeeds speeds)
+    public void drive(ChassisSpeeds speeds, double maxSpeed)
     {
         MecanumDriveWheelSpeeds wheelSpeeds = KinematicsConstants.kDriveKinematics.toWheelSpeeds(speeds);
-        wheelSpeeds.desaturate(DrivetrainConstants.kDriveMaxSpeedMPS);
+        wheelSpeeds.desaturate(maxSpeed);
         
         //Convert the speeds into the range for the motors, then set them.
         frontLeft.set(wheelSpeeds.frontLeftMetersPerSecond / DrivetrainConstants.kDriveMaxSpeedMPS);
         frontRight.set(wheelSpeeds.frontRightMetersPerSecond / DrivetrainConstants.kDriveMaxSpeedMPS);
         backLeft.set(wheelSpeeds.rearLeftMetersPerSecond / DrivetrainConstants.kDriveMaxSpeedMPS);
         backRight.set(wheelSpeeds.rearRightMetersPerSecond / DrivetrainConstants.kDriveMaxSpeedMPS);
-
-        //Update the MecanumDrive object so that WPILib doesn't get angry :).
-        mecDrive.feed();
 
         //Update Shuffleboard with all the target speeds.
         frontLeftTargetSpeed.setDouble(wheelSpeeds.frontLeftMetersPerSecond);
@@ -103,21 +99,23 @@ public class DriveSubsystem extends SubsystemBase
         backRightPower.setDouble(backRight.get());
     }
 
-    public void driveWPI(double strafe, double forward, double rotation, Rotation2d angle, boolean isFieldRelative)
+    /**
+     * Immediately stops all of the drive motors.
+     */
+    public void stopMotors()
     {
-        if (isFieldRelative)
-        {
-            mecDrive.driveCartesian(strafe, forward, rotation, angle);
-        }
-        else
-        {
-            mecDrive.driveCartesian(strafe, forward, rotation);
-        }
+        frontLeft.stopMotor();
+        frontRight.stopMotor();
+        backLeft.stopMotor();
+        backRight.stopMotor();
     }
 
     @Override
     public void periodic()
-    {}
+    {
+        //Update the battery voltage on telemetry.
+        batteryVoltage.setDouble(RobotController.getBatteryVoltage());
+    }
 
     @Override
     public void simulationPeriodic()
@@ -129,7 +127,10 @@ public class DriveSubsystem extends SubsystemBase
             backLeft.get() * DrivetrainConstants.kDriveMaxVoltage,
             backRight.get() * DrivetrainConstants.kDriveMaxVoltage);
     }
-    
+
+    /**
+     * Add the motors to the simulation (WIP).
+     */
     public void addMotorsToSim()
     {
         REVPhysicsSim.getInstance().addSparkMax(frontLeft, DCMotor.getNEO(1));
@@ -153,12 +154,6 @@ public class DriveSubsystem extends SubsystemBase
         backLeft.setInverted(DrivetrainConstants.kInvertBackLeftSide);
         frontRight.setInverted(DrivetrainConstants.kInvertFrontRightSide);
         backRight.setInverted(DrivetrainConstants.kInvertBackRightSide);
-
-        //Set the ramp rate of the motors.
-        frontLeft.setOpenLoopRampRate(DrivetrainConstants.kMotorRampRate);
-        backLeft.setOpenLoopRampRate(DrivetrainConstants.kMotorRampRate);
-        frontRight.setOpenLoopRampRate(DrivetrainConstants.kMotorRampRate);
-        backRight.setOpenLoopRampRate(DrivetrainConstants.kMotorRampRate);
 
         //Set the idle mode to brake so that the robot does a better job of staying in place.
         frontLeft.setIdleMode(IdleMode.kBrake);
