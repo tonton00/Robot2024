@@ -38,6 +38,9 @@ public class Constants
         /////////////////////
         //TODO: Find actual speed of the drivetrain, using number from online for now.
         public static final double kDriveMaxSpeedMPS = Units.feetToMeters(13.87);
+        //TODO: Configure SlewRateLimiter rateLimit.
+        public static final double kTranslationSlewRate = 1.5;
+        public static final double kRotationSlewRate = 1.0;
     }
     //Constants for the Pigeon2 IMU, such as the ID and various configuration settings.
     public static class IMUConstants

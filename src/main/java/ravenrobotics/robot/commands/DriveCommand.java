@@ -62,9 +62,9 @@ public class DriveCommand extends Command
         this.isFieldRelative = isFieldRelative;
 
         //Initialize SlewRateLimiters so we don't acclerate too quickly.
-        xLimiter = new SlewRateLimiter(1.5);
-        yLimiter = new SlewRateLimiter(1.5);
-        tLimiter = new SlewRateLimiter(1.5);
+        xLimiter = new SlewRateLimiter(DrivetrainConstants.kTranslationSlewRate);
+        yLimiter = new SlewRateLimiter(DrivetrainConstants.kTranslationSlewRate);
+        tLimiter = new SlewRateLimiter(DrivetrainConstants.kRotationSlewRate);
 
         //Add the subsystem as a requirement for the command, so the subsystem isn't being controlled by two different commands at once.
         addRequirements(driveSubsystem);
@@ -82,10 +82,10 @@ public class DriveCommand extends Command
         //Temporary variables for the speeds.
         double xSpeedMPS, ySpeedMPS, tSpeedMPS, mSpeed;
 
-        //Get the target strafe, forward/backward, and rotation speeds.
-        xSpeedMPS = xLimiter.calculate(xSpeed.getAsDouble()) * DrivetrainConstants.kDriveMaxSpeedMPS;
-        ySpeedMPS = yLimiter.calculate(ySpeed.getAsDouble()) * DrivetrainConstants.kDriveMaxSpeedMPS;
-        tSpeedMPS = tLimiter.calculate(tSpeed.getAsDouble()) * DrivetrainConstants.kDriveMaxSpeedMPS;
+        //Update the axis data on Shuffleboard.
+        xAxisEntry.setDouble(xSpeed.getAsDouble());
+        yAxisEntry.setDouble(ySpeed.getAsDouble());
+        zAxisEntry.setDouble(tSpeed.getAsDouble());
 
         //Convert the maxSpeed axis to a range of 0-1.
         mSpeed = (maxSpeed.getAsDouble() + 1) * 0.5;
@@ -96,14 +96,6 @@ public class DriveCommand extends Command
 
         //Update the max speed on Shuffleboard as a percentage.
         maxSpeedEntry.setDouble(mSpeed * 100);
-        //Update the axis data on Shuffleboard.
-        xAxisEntry.setDouble(xSpeed.getAsDouble());
-        yAxisEntry.setDouble(ySpeed.getAsDouble());
-        zAxisEntry.setDouble(tSpeed.getAsDouble());
-        //Update the filter data on Shuffleboard.
-        xAxisFilterEntry.setDouble(xLimiter.calculate(xSpeed.getAsDouble()));
-        yAxisFilterEntry.setDouble(yLimiter.calculate(ySpeed.getAsDouble()));
-        zAxisFilterEntry.setDouble(tLimiter.calculate(tSpeed.getAsDouble()));
 
         //If we are inside the deadband limit, stop the motors and return (exit this loop).
         if(Math.abs(xSpeed.getAsDouble()) < 0.1 && Math.abs(ySpeed.getAsDouble()) < 0.1 && Math.abs(tSpeed.getAsDouble()) < 0.1)
@@ -111,6 +103,17 @@ public class DriveCommand extends Command
             driveSubsystem.stopMotors();
             return;
         }
+
+        //Get the target strafe, forward/backward, and rotation speeds.
+        xSpeedMPS = xLimiter.calculate(xSpeed.getAsDouble()) * DrivetrainConstants.kDriveMaxSpeedMPS;
+        ySpeedMPS = yLimiter.calculate(ySpeed.getAsDouble()) * DrivetrainConstants.kDriveMaxSpeedMPS;
+        tSpeedMPS = tLimiter.calculate(tSpeed.getAsDouble()) * DrivetrainConstants.kDriveMaxSpeedMPS;
+
+        //Update the filter data on Shuffleboard.
+        xAxisFilterEntry.setDouble(xLimiter.calculate(xSpeed.getAsDouble()));
+        yAxisFilterEntry.setDouble(yLimiter.calculate(ySpeed.getAsDouble()));
+        zAxisFilterEntry.setDouble(tLimiter.calculate(tSpeed.getAsDouble()));
+
         //Conver the max speed to a speed in meters per second.
         mSpeed *= DrivetrainConstants.kDriveMaxSpeedMPS;
 
