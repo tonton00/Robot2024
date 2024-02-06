@@ -1,7 +1,13 @@
 package ravenrobotics.robot.subsystems;
 
+import static edu.wpi.first.units.MutableMeasure.mutable;
+import static edu.wpi.first.units.Units.Rotations;
+import static edu.wpi.first.units.Units.RotationsPerSecond;
+import static edu.wpi.first.units.Units.Volts;
+
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.REVPhysicsSim;
+import com.revrobotics.RelativeEncoder;
 import com.revrobotics.CANSparkBase.IdleMode;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 
@@ -9,9 +15,16 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.MecanumDriveWheelSpeeds;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.networktables.GenericEntry;
+import edu.wpi.first.units.Angle;
+import edu.wpi.first.units.Measure;
+import edu.wpi.first.units.MutableMeasure;
+import edu.wpi.first.units.Velocity;
+import edu.wpi.first.units.Voltage;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.simulation.BatterySim;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import ravenrobotics.robot.Robot;
 import ravenrobotics.robot.Constants.DrivetrainConstants;
 import ravenrobotics.robot.Constants.KinematicsConstants;
@@ -24,6 +37,12 @@ public class DriveSubsystem extends SubsystemBase
     private final CANSparkMax frontRight = new CANSparkMax(DrivetrainConstants.kFrontRightMotor, MotorType.kBrushless);
     private final CANSparkMax backLeft = new CANSparkMax(DrivetrainConstants.kBackLeftMotor, MotorType.kBrushless);
     private final CANSparkMax backRight = new CANSparkMax(DrivetrainConstants.kBackRightMotor, MotorType.kBrushless);
+
+    //Encoders
+    private final RelativeEncoder frontLeftEncoder = frontLeft.getEncoder();
+    private final RelativeEncoder frontRightEncoder = frontRight.getEncoder();
+    private final RelativeEncoder backLeftEncoder = backLeft.getEncoder();
+    private final RelativeEncoder backRightEncoder = backRight.getEncoder();
 
     //Instance object for simplifying getting the subsystem for commands.
     private static DriveSubsystem instance;
@@ -41,6 +60,44 @@ public class DriveSubsystem extends SubsystemBase
     private GenericEntry backRightPower = Telemetry.teleopTab.add("BR Target Power", 0).getEntry();
     //Battery voltage
     private GenericEntry batteryVoltage = Telemetry.teleopTab.add("Battery Voltage", 12).getEntry();
+
+    ///SysID
+    private final MutableMeasure<Voltage> appliedVoltage = mutable(Volts.of(0));
+    private final MutableMeasure<Angle> drivenDistance = mutable(Rotations.of(0));
+    private final MutableMeasure<Velocity<Angle>> distanceVelocity = mutable(RotationsPerSecond.of(0));
+
+    private final SysIdRoutine.Mechanism sysIDMechanism = new SysIdRoutine.Mechanism(
+        (Measure<Voltage> voltage) ->
+        {
+            frontLeft.set(voltage.in(Volts) / RobotController.getBatteryVoltage());
+            frontRight.set(voltage.in(Volts) / RobotController.getBatteryVoltage());
+            backLeft.set(voltage.in(Volts) / RobotController.getBatteryVoltage());
+            backRight.set(voltage.in(Volts) / RobotController.getBatteryVoltage());
+        },
+        log -> 
+        {
+            log.motor("frontLeft")
+                .voltage(appliedVoltage.mut_replace(frontLeft.get() * RobotController.getBatteryVoltage(), Volts))
+                .angularPosition(drivenDistance.mut_replace(frontLeftEncoder.getPosition(), Rotations))
+                .angularVelocity(distanceVelocity.mut_replace(frontLeftEncoder.getVelocity(), RotationsPerSecond));
+            log.motor("frontRight")
+                .voltage(appliedVoltage.mut_replace(frontLeft.get() * RobotController.getBatteryVoltage(), Volts))
+                .angularPosition(drivenDistance.mut_replace(frontRightEncoder.getPosition(), Rotations))
+                .angularVelocity(distanceVelocity.mut_replace(frontRightEncoder.getVelocity(), RotationsPerSecond));
+            log.motor("backLeft")
+                .voltage(appliedVoltage.mut_replace(backLeft.get() * RobotController.getBatteryVoltage(), Volts))
+                .angularPosition(drivenDistance.mut_replace(backLeftEncoder.getPosition(), Rotations))
+                .angularVelocity(distanceVelocity.mut_replace(backRightEncoder.getVelocity(), RotationsPerSecond));
+            log.motor("backRight")
+                .voltage(appliedVoltage.mut_replace(backRight.get() * RobotController.getBatteryVoltage(), Volts))
+                .angularPosition(drivenDistance.mut_replace(backRightEncoder.getPosition(), Rotations))
+                .angularVelocity(distanceVelocity.mut_replace(backRightEncoder.getVelocity(), RotationsPerSecond));
+        }, this);
+
+    private final SysIdRoutine sysIDRoutine = new SysIdRoutine(
+        new SysIdRoutine.Config(),
+        sysIDMechanism);
+
 
     /**
      * Get the active instance of DriveSubsystem.
@@ -108,6 +165,26 @@ public class DriveSubsystem extends SubsystemBase
         frontRight.stopMotor();
         backLeft.stopMotor();
         backRight.stopMotor();
+    }
+
+    /**
+     * Get the quasistatic SysID command.
+     * @param direction The direction to run the motors.
+     * @return The command to schedule.
+     */
+    public Command sysIDQuasistatic(SysIdRoutine.Direction direction)
+    {
+        return sysIDRoutine.quasistatic(direction);
+    }
+
+    /**
+     * Get the dynamic SysID command.
+     * @param direction The direction to run the motors.
+     * @return The command to schedule.
+     */
+    public Command sysIDDynamic(SysIdRoutine.Direction direction)
+    {
+        return sysIDRoutine.dynamic(direction);
     }
 
     @Override
