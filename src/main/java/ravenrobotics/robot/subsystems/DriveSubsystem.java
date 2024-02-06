@@ -132,6 +132,7 @@ public class DriveSubsystem extends SubsystemBase
     /**
      * Drive the drivetrain.
      * @param speeds The target speed of the drivetrain as a ChassisSpeeds object.
+     * @param maxSpeed The current maximum speed of the drivetrain.
      */
     public void drive(ChassisSpeeds speeds, double maxSpeed)
     {
@@ -172,7 +173,7 @@ public class DriveSubsystem extends SubsystemBase
      * @param direction The direction to run the motors.
      * @return The command to schedule.
      */
-    public Command sysIDQuasistatic(SysIdRoutine.Direction direction)
+    public Command getSysIDQuasistatic(SysIdRoutine.Direction direction)
     {
         return sysIDRoutine.quasistatic(direction);
     }
@@ -182,7 +183,7 @@ public class DriveSubsystem extends SubsystemBase
      * @param direction The direction to run the motors.
      * @return The command to schedule.
      */
-    public Command sysIDDynamic(SysIdRoutine.Direction direction)
+    public Command getSysIDDynamic(SysIdRoutine.Direction direction)
     {
         return sysIDRoutine.dynamic(direction);
     }

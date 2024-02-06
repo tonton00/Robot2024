@@ -5,10 +5,12 @@
 package ravenrobotics.robot;
 
 import edu.wpi.first.networktables.GenericEntry;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandJoystick;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import ravenrobotics.robot.Constants.DriverStationConstants;
 import ravenrobotics.robot.commands.DriveCommand;
 import ravenrobotics.robot.subsystems.DriveSubsystem;
@@ -25,6 +27,8 @@ public class RobotContainer
   public boolean isFieldRelative = false;
   private GenericEntry isFieldRelativeEntry = Telemetry.teleopTab.add("Field Relative", false).getEntry();
 
+  private final SendableChooser<Command> teleopModeChooser = new SendableChooser<Command>();
+
   //Main drive command.
   private final DriveCommand driveCommand = new DriveCommand(
     () -> -driverJoystick.getX(),
@@ -35,7 +39,15 @@ public class RobotContainer
 
   public RobotContainer()
   {
-    isFieldRelativeEntry.setBoolean(isFieldRelative);
+    //Add drive command to TeleOp mode chooser.
+    teleopModeChooser.addOption("Drive", driveCommand);
+    //Add SysID commands to TeleOp mode chooser.
+    teleopModeChooser.addOption("SysID Quasistatic Forward", DriveSubsystem.getInstance().getSysIDQuasistatic(Direction.kForward));
+    teleopModeChooser.addOption("SysID Quasistatic Backward", DriveSubsystem.getInstance().getSysIDQuasistatic(Direction.kReverse));
+    teleopModeChooser.addOption("SysID Dynamic Forward", DriveSubsystem.getInstance().getSysIDDynamic(Direction.kForward));
+    teleopModeChooser.addOption("SysID Dynamic Backward", DriveSubsystem.getInstance().getSysIDDynamic(Direction.kReverse));
+    //Put the TeleOp mode chooser on the dashboard.
+    Telemetry.teleopTab.add("TeleOp Mode", teleopModeChooser);
     //Configure configured controller bindings.
     configureBindings();
     DriveSubsystem.getInstance().setDefaultCommand(driveCommand);
