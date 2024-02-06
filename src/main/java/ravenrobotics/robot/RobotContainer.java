@@ -60,6 +60,12 @@ public class RobotContainer
     driverJoystick.button(3).onTrue(new InstantCommand(() -> IMUSubsystem.getInstance().zeroYaw()));
   }
 
+  public void setupTeleopCommand()
+  {
+    Command selectedCommand = teleopModeChooser.getSelected();
+    DriveSubsystem.getInstance().setDefaultCommand(selectedCommand);
+  }
+
   private void toggleFieldRelative()
   {
     //Toggle field relative (if true set false, if false set true)
