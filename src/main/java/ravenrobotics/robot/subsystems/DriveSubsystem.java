@@ -5,6 +5,9 @@ import static edu.wpi.first.units.Units.Rotations;
 import static edu.wpi.first.units.Units.RotationsPerSecond;
 import static edu.wpi.first.units.Units.Volts;
 
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.util.HolonomicPathFollowerConfig;
+import com.pathplanner.lib.util.ReplanningConfig;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.REVPhysicsSim;
 import com.revrobotics.RelativeEncoder;
@@ -23,12 +26,14 @@ import edu.wpi.first.units.Measure;
 import edu.wpi.first.units.MutableMeasure;
 import edu.wpi.first.units.Velocity;
 import edu.wpi.first.units.Voltage;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.simulation.BatterySim;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import ravenrobotics.robot.AutoConstants;
 import ravenrobotics.robot.Robot;
 import ravenrobotics.robot.Constants.DrivetrainConstants;
 import ravenrobotics.robot.Constants.KinematicsConstants;
@@ -104,11 +109,12 @@ public class DriveSubsystem extends SubsystemBase
 
     //Odometry-related things.
     private MecanumDriveOdometry driveOdometry;
-    private Pose2d robotPose;
+    private Pose2d drivetrainPose;
     private Field2d fieldData = new Field2d();
 
     /**
      * Get the active instance of DriveSubsystem.
+     * 
      * @return The DriveSubsystem instance.
      */
     public static DriveSubsystem getInstance()
@@ -139,10 +145,36 @@ public class DriveSubsystem extends SubsystemBase
         
         //Add the Field2d widget to Shuffleboard so we can see the robot's position.
         Telemetry.teleopTab.add("Robot Position", fieldData);
+
+        //Configure PathPlanner's AutoBuilder for use.
+        AutoBuilder.configureHolonomic(
+            this::getDrivetrainPose,
+            this::resetDrivetrainPose,
+            this::getRobotSpeed,
+            this::drive,
+            new HolonomicPathFollowerConfig(
+                AutoConstants.kAutoTranslationPIDConstants,
+                AutoConstants.kAutoRotationPIDConstants,
+                AutoConstants.kMaxAutoSpeed,
+                AutoConstants.kRobotRadius,
+                new ReplanningConfig()
+            ),
+            () ->
+            {
+                var alliance = DriverStation.getAlliance();
+                if (alliance.isPresent())
+                {
+                    return alliance.get() == DriverStation.Alliance.Red;
+                }
+                return false;
+            },
+            instance
+        );
     }
 
     /**
      * Drive the drivetrain.
+     * 
      * @param speeds The target speed of the drivetrain as a ChassisSpeeds object.
      * @param maxSpeed The current maximum speed of the drivetrain.
      */
@@ -152,6 +184,35 @@ public class DriveSubsystem extends SubsystemBase
         wheelSpeeds.desaturate(maxSpeed);
         
         //Convert the speeds into the range for the motors, then set them.
+        frontLeft.set(wheelSpeeds.frontLeftMetersPerSecond / maxSpeed);
+        frontRight.set(wheelSpeeds.frontRightMetersPerSecond / maxSpeed);
+        backLeft.set(wheelSpeeds.rearLeftMetersPerSecond / maxSpeed);
+        backRight.set(wheelSpeeds.rearRightMetersPerSecond / maxSpeed);
+
+        //Update Shuffleboard with all the target speeds.
+        frontLeftTargetSpeed.setDouble(wheelSpeeds.frontLeftMetersPerSecond);
+        frontRightTargetSpeed.setDouble(wheelSpeeds.frontRightMetersPerSecond);
+        backLeftTargetSpeed.setDouble(wheelSpeeds.rearLeftMetersPerSecond);
+        backRightTargetSpeed.setDouble(wheelSpeeds.rearRightMetersPerSecond);
+        //Update Shuffleboard with powers.
+        frontLeftPower.setDouble(frontLeft.get());
+        frontRightPower.setDouble(frontRight.get());
+        backLeftPower.setDouble(backLeft.get());
+        backRightPower.setDouble(backRight.get());
+    }
+
+    /**
+     * Drive the drivetrain.
+     * 
+     * @param speeds The target speeds of the drivetrain as a ChassisSpeeds object.
+     */
+    public void drive(ChassisSpeeds speeds)
+    {
+        //Convert the chassis speeds to wheel speeds and make sure they aren't overshooting our max speed we can actually drive.
+        MecanumDriveWheelSpeeds wheelSpeeds = KinematicsConstants.kDriveKinematics.toWheelSpeeds(speeds);
+        wheelSpeeds.desaturate(DrivetrainConstants.kDriveMaxSpeedMPS);
+
+        //Set the motors to the speeds.
         frontLeft.set(wheelSpeeds.frontLeftMetersPerSecond / DrivetrainConstants.kDriveMaxSpeedMPS);
         frontRight.set(wheelSpeeds.frontRightMetersPerSecond / DrivetrainConstants.kDriveMaxSpeedMPS);
         backLeft.set(wheelSpeeds.rearLeftMetersPerSecond / DrivetrainConstants.kDriveMaxSpeedMPS);
@@ -169,6 +230,19 @@ public class DriveSubsystem extends SubsystemBase
         backRightPower.setDouble(backRight.get());
     }
 
+    public ChassisSpeeds getRobotSpeed()
+    {
+        //Create a MecanumDriveWheelSpeeds object from the encoder speeds.
+        var speeds = new MecanumDriveWheelSpeeds(
+            frontLeftEncoder.getVelocity(),
+            frontRightEncoder.getVelocity(),
+            backLeftEncoder.getVelocity(),
+            backRightEncoder.getVelocity()
+        );
+
+        return KinematicsConstants.kDriveKinematics.toChassisSpeeds(speeds);
+    }
+
     /**
      * Returns the positions of the drivetrain wheels.
      * 
@@ -182,6 +256,22 @@ public class DriveSubsystem extends SubsystemBase
             backLeftEncoder.getPosition(),
             backRightEncoder.getPosition()
         );
+    }
+
+    /**
+     * Returns the drivetrain's pose as a Pose2d.
+     * 
+     * @return The drivetrain's pose as a Pose2d.
+     */
+    public Pose2d getDrivetrainPose()
+    {
+        return drivetrainPose;
+    }
+
+    public void resetDrivetrainPose(Pose2d newPose)
+    {
+        drivetrainPose = newPose;
+        driveOdometry.resetPosition(newPose.getRotation(), new MecanumDriveWheelPositions(), newPose);
     }
 
     /**
@@ -222,13 +312,13 @@ public class DriveSubsystem extends SubsystemBase
         batteryVoltage.setDouble(RobotController.getBatteryVoltage());
 
         //Update the odometry.
-        robotPose = driveOdometry.update(
+        drivetrainPose = driveOdometry.update(
             IMUSubsystem.getInstance().getYaw(),
             getWheelPositions()
         );
 
         //Update the robot pose on the field widget.
-        fieldData.setRobotPose(robotPose);
+        fieldData.setRobotPose(drivetrainPose);
     }
 
     @Override
@@ -289,6 +379,12 @@ public class DriveSubsystem extends SubsystemBase
         frontRightEncoder.setPosition(0.0);
         backLeftEncoder.setPosition(0.0);
         backRightEncoder.setPosition(0.0);
+
+        //Sets the velocity conversion factor to give us m/s.
+        frontLeftEncoder.setVelocityConversionFactor(DrivetrainConstants.kEncoderVelocityConversionFactor);
+        frontRightEncoder.setVelocityConversionFactor(DrivetrainConstants.kEncoderVelocityConversionFactor);
+        backLeftEncoder.setVelocityConversionFactor(DrivetrainConstants.kEncoderVelocityConversionFactor);
+        backRightEncoder.setVelocityConversionFactor(DrivetrainConstants.kEncoderVelocityConversionFactor);
 
         //Initialize odometry since encoders are ready.
         driveOdometry = new MecanumDriveOdometry(

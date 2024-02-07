@@ -41,6 +41,11 @@ public class Constants
         //Slew rates.
         public static final double kTranslationSlewRate = 1.5;
         public static final double kRotationSlewRate = 1.0;
+        /////////////////////
+        //Encoder Constants//
+        /////////////////////
+        public static final double kWheelDiameter = Units.inchesToMeters(6);
+        public static final double kEncoderVelocityConversionFactor = Math.PI * kWheelDiameter;
     }
     //Constants for the Pigeon2 IMU, such as the ID and various configuration settings.
     public static class IMUConstants
