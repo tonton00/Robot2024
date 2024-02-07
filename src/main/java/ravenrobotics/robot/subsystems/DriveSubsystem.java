@@ -11,7 +11,10 @@ import com.revrobotics.RelativeEncoder;
 import com.revrobotics.CANSparkBase.IdleMode;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 
+import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.kinematics.MecanumDriveOdometry;
+import edu.wpi.first.math.kinematics.MecanumDriveWheelPositions;
 import edu.wpi.first.math.kinematics.MecanumDriveWheelSpeeds;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.networktables.GenericEntry;
@@ -22,6 +25,7 @@ import edu.wpi.first.units.Velocity;
 import edu.wpi.first.units.Voltage;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.simulation.BatterySim;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
@@ -98,6 +102,10 @@ public class DriveSubsystem extends SubsystemBase
         new SysIdRoutine.Config(),
         sysIDMechanism);
 
+    //Odometry-related things.
+    private MecanumDriveOdometry driveOdometry;
+    private Pose2d robotPose;
+    private Field2d fieldData = new Field2d();
 
     /**
      * Get the active instance of DriveSubsystem.
@@ -119,14 +127,18 @@ public class DriveSubsystem extends SubsystemBase
      */
     private DriveSubsystem()
     {
-        //Configure the motors for use.
+        //Configure the motors and encoders for use.
         configMotors();
+        configEncoders();
 
         //Setup for simulation
         if(Robot.isSimulation())
         {
             addMotorsToSim();
         }
+        
+        //Add the Field2d widget to Shuffleboard so we can see the robot's position.
+        Telemetry.teleopTab.add("Robot Position", fieldData);
     }
 
     /**
@@ -155,6 +167,21 @@ public class DriveSubsystem extends SubsystemBase
         frontRightPower.setDouble(frontRight.get());
         backLeftPower.setDouble(backLeft.get());
         backRightPower.setDouble(backRight.get());
+    }
+
+    /**
+     * Returns the positions of the drivetrain wheels.
+     * 
+     * @return The positions of the wheels as a MecanumDriveWhelPositions.
+     */
+    public MecanumDriveWheelPositions getWheelPositions()
+    {
+        return new MecanumDriveWheelPositions(
+            frontLeftEncoder.getPosition(),
+            frontRightEncoder.getPosition(),
+            backLeftEncoder.getPosition(),
+            backRightEncoder.getPosition()
+        );
     }
 
     /**
@@ -193,6 +220,15 @@ public class DriveSubsystem extends SubsystemBase
     {
         //Update the battery voltage on telemetry.
         batteryVoltage.setDouble(RobotController.getBatteryVoltage());
+
+        //Update the odometry.
+        robotPose = driveOdometry.update(
+            IMUSubsystem.getInstance().getYaw(),
+            getWheelPositions()
+        );
+
+        //Update the robot pose on the field widget.
+        fieldData.setRobotPose(robotPose);
     }
 
     @Override
@@ -244,5 +280,20 @@ public class DriveSubsystem extends SubsystemBase
         backLeft.burnFlash();
         frontRight.burnFlash();
         backRight.burnFlash();
+    }
+
+    private void configEncoders()
+    {
+        //Set positions to 0.
+        frontLeftEncoder.setPosition(0.0);
+        frontRightEncoder.setPosition(0.0);
+        backLeftEncoder.setPosition(0.0);
+        backRightEncoder.setPosition(0.0);
+
+        //Initialize odometry since encoders are ready.
+        driveOdometry = new MecanumDriveOdometry(
+            KinematicsConstants.kDriveKinematics,
+            IMUSubsystem.getInstance().getYaw(), 
+            getWheelPositions());
     }
 }

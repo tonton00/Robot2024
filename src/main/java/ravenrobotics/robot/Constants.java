@@ -61,6 +61,12 @@ public class Constants
         public static final boolean kDisableNoMotionCalibration = false;
         public static final boolean kDisableTemperatureCompensation = false;
     }
+    //Constants for the intake.
+    public static class IntakeConstants
+    {
+        //Motor constants.
+        public static final int kRollerMotor = 6;
+    }
     //Kinematics-related constants
     public static class KinematicsConstants
     {
