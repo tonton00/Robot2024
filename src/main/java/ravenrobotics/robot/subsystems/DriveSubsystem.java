@@ -41,20 +41,17 @@ import ravenrobotics.robot.util.Telemetry;
 
 public class DriveSubsystem extends SubsystemBase
 {
-    //Drivetrain motors. Configured for use with a Vortex motor, which is brushless.
+    //Drivetrain motors. Configured for use with a NEO motor, which is brushless.
     private final CANSparkMax frontLeft = new CANSparkMax(DrivetrainConstants.kFrontLeftMotor, MotorType.kBrushless);
     private final CANSparkMax frontRight = new CANSparkMax(DrivetrainConstants.kFrontRightMotor, MotorType.kBrushless);
     private final CANSparkMax backLeft = new CANSparkMax(DrivetrainConstants.kBackLeftMotor, MotorType.kBrushless);
     private final CANSparkMax backRight = new CANSparkMax(DrivetrainConstants.kBackRightMotor, MotorType.kBrushless);
 
-    //Encoders
+    //Drivetrain encoders.
     private final RelativeEncoder frontLeftEncoder = frontLeft.getEncoder();
     private final RelativeEncoder frontRightEncoder = frontRight.getEncoder();
     private final RelativeEncoder backLeftEncoder = backLeft.getEncoder();
     private final RelativeEncoder backRightEncoder = backRight.getEncoder();
-
-    //Instance object for simplifying getting the subsystem for commands.
-    private static DriveSubsystem instance;
 
     ///Shuffleboard (telemetry)
     //Target speeds
@@ -62,22 +59,26 @@ public class DriveSubsystem extends SubsystemBase
     private GenericEntry frontRightTargetSpeed = Telemetry.teleopTab.add("FR Target Speed", 0).getEntry();
     private GenericEntry backLeftTargetSpeed = Telemetry.teleopTab.add("BL Target Speed", 0).getEntry();
     private GenericEntry backRightTargetSpeed = Telemetry.teleopTab.add("BR Target Speed", 0).getEntry();
+
     //Target power
     private GenericEntry frontLeftPower = Telemetry.teleopTab.add("FL Target Power", 0).getEntry();
     private GenericEntry frontRightPower = Telemetry.teleopTab.add("FR Target Power", 0).getEntry();
     private GenericEntry backLeftPower = Telemetry.teleopTab.add("BL Target Power", 0).getEntry();
     private GenericEntry backRightPower = Telemetry.teleopTab.add("BR Target Power", 0).getEntry();
+    
     //Battery voltage
     private GenericEntry batteryVoltage = Telemetry.teleopTab.add("Battery Voltage", 12).getEntry();
 
-    ///SysID
+    //SysID variables for measuring the voltage, distance, and velocity.
     private final MutableMeasure<Voltage> appliedVoltage = mutable(Volts.of(0));
     private final MutableMeasure<Angle> drivenDistance = mutable(Rotations.of(0));
     private final MutableMeasure<Velocity<Angle>> distanceVelocity = mutable(RotationsPerSecond.of(0));
 
+    //SysID mechanism for applying the tests.
     private final SysIdRoutine.Mechanism sysIDMechanism = new SysIdRoutine.Mechanism(
         (Measure<Voltage> voltage) ->
         {
+            //Set the motor power to the new voltages.
             frontLeft.set(voltage.in(Volts) / RobotController.getBatteryVoltage());
             frontRight.set(voltage.in(Volts) / RobotController.getBatteryVoltage());
             backLeft.set(voltage.in(Volts) / RobotController.getBatteryVoltage());
@@ -85,24 +86,29 @@ public class DriveSubsystem extends SubsystemBase
         },
         log -> 
         {
+            //Log front left motor voltage, position, and velocity.
             log.motor("frontLeft")
                 .voltage(appliedVoltage.mut_replace(frontLeft.get() * RobotController.getBatteryVoltage(), Volts))
                 .angularPosition(drivenDistance.mut_replace(frontLeftEncoder.getPosition(), Rotations))
                 .angularVelocity(distanceVelocity.mut_replace(frontLeftEncoder.getVelocity(), RotationsPerSecond));
+            //Log front right motor voltage, position, and velocity.
             log.motor("frontRight")
                 .voltage(appliedVoltage.mut_replace(frontLeft.get() * RobotController.getBatteryVoltage(), Volts))
                 .angularPosition(drivenDistance.mut_replace(frontRightEncoder.getPosition(), Rotations))
                 .angularVelocity(distanceVelocity.mut_replace(frontRightEncoder.getVelocity(), RotationsPerSecond));
+            //Log back left motor voltage, position, and velocity.
             log.motor("backLeft")
                 .voltage(appliedVoltage.mut_replace(backLeft.get() * RobotController.getBatteryVoltage(), Volts))
                 .angularPosition(drivenDistance.mut_replace(backLeftEncoder.getPosition(), Rotations))
                 .angularVelocity(distanceVelocity.mut_replace(backRightEncoder.getVelocity(), RotationsPerSecond));
+            //Log back right motor voltage, position, and velocity.
             log.motor("backRight")
                 .voltage(appliedVoltage.mut_replace(backRight.get() * RobotController.getBatteryVoltage(), Volts))
                 .angularPosition(drivenDistance.mut_replace(backRightEncoder.getPosition(), Rotations))
                 .angularVelocity(distanceVelocity.mut_replace(backRightEncoder.getVelocity(), RotationsPerSecond));
         }, this);
 
+    //SysID Routine for creating the commands to run the routines.
     private final SysIdRoutine sysIDRoutine = new SysIdRoutine(
         new SysIdRoutine.Config(),
         sysIDMechanism);
@@ -111,6 +117,9 @@ public class DriveSubsystem extends SubsystemBase
     private MecanumDriveOdometry driveOdometry;
     private Pose2d drivetrainPose;
     private Field2d fieldData = new Field2d();
+
+    //Instance object for simplifying getting the subsystem for commands.
+    private static DriveSubsystem instance;
 
     /**
      * Get the active instance of DriveSubsystem.
@@ -148,26 +157,41 @@ public class DriveSubsystem extends SubsystemBase
 
         //Configure PathPlanner's AutoBuilder for use.
         AutoBuilder.configureHolonomic(
-            this::getDrivetrainPose,
-            this::resetDrivetrainPose,
+            //Gives the robot pose as a Pose2d.
+            this::getRobotPose,
+            //Resets the robot pose to a Pose2d (the beginning of the path).
+            this::resetRobotPose,
+            //Gets the robot speed so it can drive it per limitations.
             this::getRobotSpeed,
+            //Feeds a ChassisSpeed object to the drivetrain for actually driving the path.
             this::drive,
+            //Path following config.
             new HolonomicPathFollowerConfig(
+                //PID Constants.
                 AutoConstants.kAutoTranslationPIDConstants,
                 AutoConstants.kAutoRotationPIDConstants,
+                //Max speed in autonomous (m/s).
                 AutoConstants.kMaxAutoSpeed,
+                //The radius of the robot.
                 AutoConstants.kRobotRadius,
+                //Replanning config (what happens if the robot gets off of the path).
                 new ReplanningConfig()
             ),
+            //Check if the path should get flipped if we are on Red Alliance.
             () ->
             {
+                //Get the current alliance.
                 var alliance = DriverStation.getAlliance();
+                //Check if there is an alliance present, then check if it is Red.
                 if (alliance.isPresent())
                 {
                     return alliance.get() == DriverStation.Alliance.Red;
                 }
+
                 return false;
             },
+
+            //Add the subsystem as a requirement for the AutoBuilder commands.
             instance
         );
     }
@@ -230,6 +254,11 @@ public class DriveSubsystem extends SubsystemBase
         backRightPower.setDouble(backRight.get());
     }
 
+    /**
+     * Returns the robot's speed as a ChassisSpeeds.
+     * 
+     * @return The robot's speed as a ChassisSpeeds.
+     */
     public ChassisSpeeds getRobotSpeed()
     {
         //Create a MecanumDriveWheelSpeeds object from the encoder speeds.
@@ -263,12 +292,17 @@ public class DriveSubsystem extends SubsystemBase
      * 
      * @return The drivetrain's pose as a Pose2d.
      */
-    public Pose2d getDrivetrainPose()
+    public Pose2d getRobotPose()
     {
         return drivetrainPose;
     }
 
-    public void resetDrivetrainPose(Pose2d newPose)
+    /**
+     * Resets the robot's odometry to a new position.
+     * 
+     * @param newPose The robot's new position as a Pose2d.
+     */
+    public void resetRobotPose(Pose2d newPose)
     {
         drivetrainPose = newPose;
         driveOdometry.resetPosition(newPose.getRotation(), new MecanumDriveWheelPositions(), newPose);
@@ -287,6 +321,7 @@ public class DriveSubsystem extends SubsystemBase
 
     /**
      * Get the quasistatic SysID command.
+     * 
      * @param direction The direction to run the motors.
      * @return The command to schedule.
      */
@@ -297,6 +332,7 @@ public class DriveSubsystem extends SubsystemBase
 
     /**
      * Get the dynamic SysID command.
+     * 
      * @param direction The direction to run the motors.
      * @return The command to schedule.
      */
@@ -342,6 +378,7 @@ public class DriveSubsystem extends SubsystemBase
         REVPhysicsSim.getInstance().addSparkMax(backLeft, DCMotor.getNEO(1));
         REVPhysicsSim.getInstance().addSparkMax(backLeft, DCMotor.getNEO(1));
     }
+
     /**
      * Configure the drivetrain motors for use.
      */
@@ -381,10 +418,15 @@ public class DriveSubsystem extends SubsystemBase
         backRightEncoder.setPosition(0.0);
 
         //Sets the velocity conversion factor to give us m/s.
-        frontLeftEncoder.setVelocityConversionFactor(DrivetrainConstants.kEncoderVelocityConversionFactor);
-        frontRightEncoder.setVelocityConversionFactor(DrivetrainConstants.kEncoderVelocityConversionFactor);
-        backLeftEncoder.setVelocityConversionFactor(DrivetrainConstants.kEncoderVelocityConversionFactor);
-        backRightEncoder.setVelocityConversionFactor(DrivetrainConstants.kEncoderVelocityConversionFactor);
+        frontLeftEncoder.setVelocityConversionFactor(DrivetrainConstants.kEncoderConversionFactor);
+        frontRightEncoder.setVelocityConversionFactor(DrivetrainConstants.kEncoderConversionFactor);
+        backLeftEncoder.setVelocityConversionFactor(DrivetrainConstants.kEncoderConversionFactor);
+        backRightEncoder.setVelocityConversionFactor(DrivetrainConstants.kEncoderConversionFactor);
+        //Sets the position factor to give us accurate distance measurements.
+        frontLeftEncoder.setPositionConversionFactor(DrivetrainConstants.kEncoderConversionFactor);
+        frontRightEncoder.setPositionConversionFactor(DrivetrainConstants.kEncoderConversionFactor);
+        backLeftEncoder.setPositionConversionFactor(DrivetrainConstants.kEncoderConversionFactor);
+        backRightEncoder.setPositionConversionFactor(DrivetrainConstants.kEncoderConversionFactor);
 
         //Initialize odometry since encoders are ready.
         driveOdometry = new MecanumDriveOdometry(
