@@ -71,6 +71,7 @@ public class Constants
     {
         //Motor constants.
         public static final int kRollerMotor = 6;
+        public static final int kIntakeArmMotor = 7;
     }
     //Kinematics-related constants
     public static class KinematicsConstants

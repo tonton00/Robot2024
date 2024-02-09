@@ -2,8 +2,10 @@ package ravenrobotics.robot.subsystems;
 
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
+import com.revrobotics.Rev2mDistanceSensor;
 import com.revrobotics.CANSparkBase.IdleMode;
 import com.revrobotics.CANSparkLowLevel.MotorType;
+import com.revrobotics.Rev2mDistanceSensor.Port;
 
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import ravenrobotics.robot.Constants.IntakeConstants;
@@ -14,12 +16,18 @@ public class IntakeSubsystem extends SubsystemBase
     private final CANSparkMax rollerMotor = new CANSparkMax(IntakeConstants.kRollerMotor, MotorType.kBrushless);
     private final RelativeEncoder rollerMotorEncoder = rollerMotor.getEncoder();
 
+    private final CANSparkMax intakeArmMotor = new CANSparkMax(IntakeConstants.kIntakeArmMotor, MotorType.kBrushless);
+    private final RelativeEncoder intakeArmMotorEncoder = intakeArmMotor.getEncoder();
+
+    //Distance sensor.
+    private final Rev2mDistanceSensor distanceSensor = new Rev2mDistanceSensor(Port.kOnboard);
+
     private static IntakeSubsystem instance;
 
     /**
      * Returns the active instance of the IntakeSubsystem.
      * 
-     * @return 
+     * @return The IntakeSubsystem instance.
      */
     public static IntakeSubsystem getInstance()
     {
@@ -33,11 +41,22 @@ public class IntakeSubsystem extends SubsystemBase
         return instance;
     }
 
+    /**
+     * Subsystem for controlling the intake on the robot.
+     */
     private IntakeSubsystem()
     {
         //Configure the motors and encoders for use.
         configMotors();
         configEncoders();
+    }
+
+    /**
+     * Run the full intake routine.
+     */
+    public void runIntakeRoutine()
+    {
+
     }
 
     /**
@@ -61,5 +80,6 @@ public class IntakeSubsystem extends SubsystemBase
     private void configEncoders()
     {
         rollerMotorEncoder.setPosition(0.0);
+        intakeArmMotorEncoder.setPosition(0.0);
     }
 }
