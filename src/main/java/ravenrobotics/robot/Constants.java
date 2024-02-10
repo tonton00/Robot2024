@@ -71,7 +71,16 @@ public class Constants
     {
         //Motor constants.
         public static final int kRollerMotor = 6;
-        public static final int kIntakeArmMotor = 7;
+        public static final int kArmMotor = 7;
+        //PID Constants for the arm.
+        public static final double kArmP = 3.0;
+        public static final double kArmI = 0.0;
+        public static final double kArmD = 0.0;
+        
+        public static final double kArmDeployedSetpoint = 50;
+
+        public static final double kRollerFF = 1.0;
+        public static final double kRollerSetpoint = 4000;
     }
 
     //Constants for the flywheel.
