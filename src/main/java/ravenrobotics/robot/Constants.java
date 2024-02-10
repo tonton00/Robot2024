@@ -73,7 +73,21 @@ public class Constants
         public static final int kRollerMotor = 6;
         public static final int kIntakeArmMotor = 7;
     }
-    //Kinematics-related constants
+
+    //Constants for the flywheel.
+    public static class FlywheelConstants
+    {
+        //Fly Wheel Motor Id's
+        public static final int kTopFlyWheel = 8;
+        public static final int kBottomFlyWheel = 9;
+        //Inverting Fly Wheel
+        public static final boolean kInvertTopFlyWheel = false;
+        public static final boolean kInvertBottomFlyWheel = true;
+        //Setpoint
+        public static final double kSetPoint = 3000;
+    }
+
+    //Constants for kinematics.
     public static class KinematicsConstants
     {
         //Offset from the center of the robot to a wheel.
