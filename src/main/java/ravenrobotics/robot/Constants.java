@@ -10,6 +10,7 @@ public class Constants
     public static class DriverStationConstants
     {
         public static final int kDriverPort = 0;
+        public static final int kSystemsPort = 1;
     }
     //Constants for the drivetrain, like motor IDs and whether they should be inverted.
     public static class DrivetrainConstants
@@ -81,6 +82,7 @@ public class Constants
 
         public static final double kRollerFF = 1.0;
         public static final double kRollerSetpoint = 4000;
+        public static final double kNoteInDistance = 6;
     }
 
     //Constants for the flywheel.

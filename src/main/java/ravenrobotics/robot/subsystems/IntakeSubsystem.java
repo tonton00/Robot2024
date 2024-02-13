@@ -10,8 +10,11 @@ import com.revrobotics.CANSparkLowLevel.MotorType;
 import com.revrobotics.Rev2mDistanceSensor.Port;
 
 import edu.wpi.first.math.controller.BangBangController;
+import edu.wpi.first.networktables.GenericEntry;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import ravenrobotics.robot.Constants.IntakeConstants;
+import ravenrobotics.robot.util.Telemetry;
 
 public class IntakeSubsystem extends SubsystemBase
 {
@@ -20,7 +23,7 @@ public class IntakeSubsystem extends SubsystemBase
     private final RelativeEncoder rollerMotorEncoder = rollerMotor.getEncoder();
     //Arm motor and encoder.
     private final CANSparkMax armMotor = new CANSparkMax(IntakeConstants.kArmMotor, MotorType.kBrushless);
-    private final RelativeEncoder intakeArmMotorEncoder = armMotor.getEncoder();
+    private final RelativeEncoder armMotorEncoder = armMotor.getEncoder();
 
     //PID Controller for the arm.
     private final SparkPIDController armPIDController = armMotor.getPIDController();
@@ -31,6 +34,9 @@ public class IntakeSubsystem extends SubsystemBase
     //Distance sensor.
     //private final Rev2mDistanceSensor distanceSensor = new Rev2mDistanceSensor(Port.kOnboard);
 
+    //Shuffleboard
+    private final GenericEntry armPositionEntry = Telemetry.teleopTab.add("Arm Position", 0).getEntry();
+
     private static IntakeSubsystem instance;
 
     public enum IntakeArmPosition
@@ -39,17 +45,33 @@ public class IntakeSubsystem extends SubsystemBase
         kRetracted
     }
 
-    private final Thread rollerThread = new Thread(() ->
+    private final Command rollerCommand = new Command()
     {
-        //TODO: Get the distance sensors so we can actually build this.
         boolean isLoaded = false;
-        while (!isLoaded)
+        @Override
+        public void execute()
         {
             rollerPIDController.setReference(rollerBBController.calculate(rollerMotorEncoder.getVelocity(), IntakeConstants.kRollerSetpoint), ControlType.kVelocity);
-            //Add things.
+            //TODO: Get measurement from lasers.
+            double noteDistance = 50;
+            if (noteDistance < IntakeConstants.kNoteInDistance)
+            {
+                isLoaded = true;
+            }
         }
-        rollerMotor.stopMotor();
-    });
+
+        @Override
+        public void end(boolean isInterrupted)
+        {
+            rollerMotor.stopMotor();
+        }
+
+        @Override
+        public boolean isFinished()
+        {
+            return isLoaded;
+        }
+    };
 
     /**
      * Returns the active instance of the IntakeSubsystem.
@@ -76,6 +98,8 @@ public class IntakeSubsystem extends SubsystemBase
         //Configure the motors and encoders for use.
         configMotors();
         configEncoders();
+
+        rollerCommand.addRequirements(this);
     }
 
     /**
@@ -84,12 +108,10 @@ public class IntakeSubsystem extends SubsystemBase
     public void runIntakeRoutine()
     {
         setIntakePosition(IntakeArmPosition.kDeployed);
-        rollerThread.start();
-        //Join the thread and wait.
-        try {
-            rollerThread.join();
-        } catch (InterruptedException e) {
-            System.out.println("Roller thread canceled.");
+        rollerCommand.schedule();
+        while (rollerCommand.isScheduled())
+        {
+            continue;
         }
         setIntakePosition(IntakeArmPosition.kRetracted);
     }
@@ -101,16 +123,36 @@ public class IntakeSubsystem extends SubsystemBase
      */
     public void setIntakePosition(IntakeArmPosition position)
     {
-        if (position == IntakeArmPosition.kDeployed)
+        switch(position)
         {
-            //If we want to deploy the arm, set it to it's reference point.
-            armPIDController.setReference(IntakeConstants.kArmDeployedSetpoint, ControlType.kPosition);
+            case kDeployed -> armPIDController.setReference(IntakeConstants.kArmDeployedSetpoint, ControlType.kSmartMotion);
+            case kRetracted -> armPIDController.setReference(0, ControlType.kSmartMotion);
         }
-        else if (position == IntakeArmPosition.kRetracted)
-        {
-            //If we want to retract the arm
-            armPIDController.setReference(0, ControlType.kPosition);
-        }
+    }
+
+    public void runRollers()
+    {
+        rollerMotor.set(1);
+    }
+
+    public void stopRollers()
+    {
+        rollerMotor.stopMotor();
+    }
+
+    /**
+     * Interrupts (cancels) the roller thread.
+     */
+    public void cancelWaitRoutine()
+    {
+        rollerCommand.cancel();
+    }
+
+    @Override
+    public void periodic()
+    {
+        //Update arm motor's position on Shuffleboard.
+        armPositionEntry.setDouble(armMotorEncoder.getPosition());
     }
 
     /**
@@ -123,13 +165,14 @@ public class IntakeSubsystem extends SubsystemBase
 
         //Set idle mode.
         rollerMotor.setIdleMode(IdleMode.kCoast);
+        armMotor.setIdleMode(IdleMode.kCoast);
 
         //Set the PID constants for the PID controller.
         armPIDController.setP(IntakeConstants.kArmP);
         armPIDController.setI(IntakeConstants.kArmI);
         armPIDController.setD(IntakeConstants.kArmD);
 
-        armPIDController.setFeedbackDevice(intakeArmMotorEncoder);
+        armPIDController.setFeedbackDevice(armMotorEncoder);
 
         //Save configuration.
         rollerMotor.burnFlash();
@@ -141,6 +184,6 @@ public class IntakeSubsystem extends SubsystemBase
     private void configEncoders()
     {
         rollerMotorEncoder.setPosition(0.0);
-        intakeArmMotorEncoder.setPosition(0.0);
+        armMotorEncoder.setPosition(0.0);
     }
 }

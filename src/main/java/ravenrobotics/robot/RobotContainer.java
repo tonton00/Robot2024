@@ -10,11 +10,13 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandJoystick;
+import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import ravenrobotics.robot.Constants.DriverStationConstants;
 import ravenrobotics.robot.commands.DriveCommand;
 import ravenrobotics.robot.subsystems.DriveSubsystem;
 import ravenrobotics.robot.subsystems.IMUSubsystem;
+import ravenrobotics.robot.subsystems.IntakeSubsystem;
 import ravenrobotics.robot.util.Telemetry;
 
 public class RobotContainer 
@@ -22,6 +24,7 @@ public class RobotContainer
   //Driver controller (drives the robot around).
   //private final CommandXboxController driverController = new CommandXboxController(DriverStationConstants.kDriverPort);
   private final CommandJoystick driverJoystick = new CommandJoystick(DriverStationConstants.kDriverPort);
+  private final CommandXboxController systemsController = new CommandXboxController(DriverStationConstants.kSystemsPort);
 
   //Whether to drive field relative or not.
   public boolean isFieldRelative = false;
@@ -58,6 +61,11 @@ public class RobotContainer
     //Set the buttons on the joystick for field-relative and zeroing the heading.
     driverJoystick.button(2).onTrue(new InstantCommand(() -> toggleFieldRelative()));
     driverJoystick.button(3).onTrue(new InstantCommand(() -> IMUSubsystem.getInstance().zeroYaw()));
+
+    systemsController.a().toggleOnTrue(new InstantCommand(() -> IntakeSubsystem.getInstance().runIntakeRoutine()));
+    systemsController.a().toggleOnFalse(new InstantCommand(() -> IntakeSubsystem.getInstance().cancelWaitRoutine()));
+    systemsController.y().toggleOnTrue(new InstantCommand(() -> IntakeSubsystem.getInstance().runRollers()));
+    systemsController.y().toggleOnFalse(new InstantCommand(() -> IntakeSubsystem.getInstance().stopRollers()));
   }
 
   public void setupTeleopCommand()
