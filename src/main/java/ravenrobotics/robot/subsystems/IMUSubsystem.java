@@ -14,7 +14,7 @@ import ravenrobotics.robot.util.Telemetry;
 public class IMUSubsystem extends SubsystemBase 
 {
     //Pigeon2 object for actually interfacing with the IMU.
-    private final Pigeon2 imu = new Pigeon2(IMUConstants.kPigeon2ID);
+    private final Pigeon2 imu = new Pigeon2(IMUConstants.kPigeon2ID, IMUConstants.kPigeon2CANBus);
 
     //Instance object for simplifying getting the subsystem in commands.
     private static IMUSubsystem instance;

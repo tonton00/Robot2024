@@ -53,6 +53,7 @@ public class Constants
     {
         //ID of the Pigeon2.
         public static final int kPigeon2ID = 1;
+        public static final String kPigeon2CANBus = "ctre";
         //Whether the IMU should default to future (potentially unsupported) configs.
         public static final boolean kFutureProofConfigs = false;
         //IMU trim for readings.

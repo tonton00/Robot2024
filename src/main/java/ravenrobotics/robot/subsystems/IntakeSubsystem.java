@@ -132,7 +132,8 @@ public class IntakeSubsystem extends SubsystemBase
 
     public void runRollers()
     {
-        rollerMotor.set(1);
+        //changed because rollers were super speedy
+        rollerMotor.set(.5);
     }
 
     public void stopRollers()
@@ -186,4 +187,11 @@ public class IntakeSubsystem extends SubsystemBase
         rollerMotorEncoder.setPosition(0.0);
         armMotorEncoder.setPosition(0.0);
     }
+
+    //comand used in RobotContainer to run Rollers alongWith FlyWheels
+    public Command flyRollerCommand()
+    {
+        return this.startEnd(()->this.runRollers(), ()->this.stopRollers());
+    }
+
 }

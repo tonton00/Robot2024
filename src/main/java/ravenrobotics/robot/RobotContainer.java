@@ -15,6 +15,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import ravenrobotics.robot.Constants.DriverStationConstants;
 import ravenrobotics.robot.commands.DriveCommand;
 import ravenrobotics.robot.subsystems.DriveSubsystem;
+import ravenrobotics.robot.subsystems.FlywheelSubsystem;
 import ravenrobotics.robot.subsystems.IMUSubsystem;
 import ravenrobotics.robot.subsystems.IntakeSubsystem;
 import ravenrobotics.robot.util.Telemetry;
@@ -44,11 +45,6 @@ public class RobotContainer
   {
     //Add drive command to TeleOp mode chooser.
     teleopModeChooser.addOption("Drive", driveCommand);
-    //Add SysID commands to TeleOp mode chooser.
-    teleopModeChooser.addOption("SysID Quasistatic Forward", DriveSubsystem.getInstance().getSysIDQuasistatic(Direction.kForward));
-    teleopModeChooser.addOption("SysID Quasistatic Backward", DriveSubsystem.getInstance().getSysIDQuasistatic(Direction.kReverse));
-    teleopModeChooser.addOption("SysID Dynamic Forward", DriveSubsystem.getInstance().getSysIDDynamic(Direction.kForward));
-    teleopModeChooser.addOption("SysID Dynamic Backward", DriveSubsystem.getInstance().getSysIDDynamic(Direction.kReverse));
     //Put the TeleOp mode chooser on the dashboard.
     Telemetry.teleopTab.add("TeleOp Mode", teleopModeChooser);
     //Configure configured controller bindings.
@@ -58,14 +54,27 @@ public class RobotContainer
 
   private void configureBindings()
   {
+    // Shooting: parallel command to run intake rollers and flywheel while trigger held 
+    driverJoystick.button(1).whileTrue(IntakeSubsystem.getInstance().flyRollerCommand()
+    .alongWith(FlywheelSubsystem.getInstance().flyCommand()));
+
+
     //Set the buttons on the joystick for field-relative and zeroing the heading.
     driverJoystick.button(2).onTrue(new InstantCommand(() -> toggleFieldRelative()));
     driverJoystick.button(3).onTrue(new InstantCommand(() -> IMUSubsystem.getInstance().zeroYaw()));
 
+    driverJoystick.button(7).onTrue(DriveSubsystem.getInstance().getSysIDDynamic(Direction.kForward));
+    driverJoystick.button(8).onTrue(DriveSubsystem.getInstance().getSysIDDynamic(Direction.kReverse));
+    driverJoystick.button(9).onTrue(DriveSubsystem.getInstance().getSysIDQuasistatic(Direction.kForward));
+    driverJoystick.button(10).onTrue(DriveSubsystem.getInstance().getSysIDQuasistatic(Direction.kReverse));
+
     systemsController.a().toggleOnTrue(new InstantCommand(() -> IntakeSubsystem.getInstance().runIntakeRoutine()));
     systemsController.a().toggleOnFalse(new InstantCommand(() -> IntakeSubsystem.getInstance().cancelWaitRoutine()));
-    systemsController.y().toggleOnTrue(new InstantCommand(() -> IntakeSubsystem.getInstance().runRollers()));
-    systemsController.y().toggleOnFalse(new InstantCommand(() -> IntakeSubsystem.getInstance().stopRollers()));
+    //systemsController.y().toggleOnTrue(new InstantCommand(() -> IntakeSubsystem.getInstance().runRollers()));
+    //systemsController.y().toggleOnFalse(new InstantCommand(() -> IntakeSubsystem.getInstance().stopRollers()));
+
+    // systemsController.back().toggleOnTrue(new InstantCommand(() -> FlywheelSubsystem.getInstance().override()));
+   // systemsController.back().toggleOnFalse(new InstantCommand(() -> FlywheelSubsystem.getInstance().unOverride()));
   }
 
   public void setupTeleopCommand()

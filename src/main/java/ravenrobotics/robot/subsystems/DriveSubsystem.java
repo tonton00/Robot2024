@@ -204,6 +204,15 @@ public class DriveSubsystem extends SubsystemBase
      */
     public void drive(ChassisSpeeds speeds, double maxSpeed)
     {
+        double omegaMetersPerSecond = speeds.omegaRadiansPerSecond * AutoConstants.kRobotRadius;
+        if (omegaMetersPerSecond > speeds.vxMetersPerSecond && omegaMetersPerSecond > speeds.vyMetersPerSecond)
+        {
+            frontLeft.set(speeds.omegaRadiansPerSecond / maxSpeed);
+            frontRight.set(speeds.omegaRadiansPerSecond / maxSpeed);
+            backLeft.set(speeds.omegaRadiansPerSecond / maxSpeed);
+            backRight.set(speeds.omegaRadiansPerSecond / maxSpeed);
+        }
+
         MecanumDriveWheelSpeeds wheelSpeeds = KinematicsConstants.kDriveKinematics.toWheelSpeeds(speeds);
         wheelSpeeds.desaturate(maxSpeed);
         

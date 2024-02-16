@@ -5,6 +5,7 @@ import com.revrobotics.RelativeEncoder;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 
 import edu.wpi.first.math.controller.BangBangController;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import ravenrobotics.robot.Constants.FlywheelConstants;
 
@@ -26,6 +27,7 @@ public class FlywheelSubsystem extends SubsystemBase
 
     //Tell the flywheel is enabled
     private boolean isEnabled = false;
+    private boolean isOverride = false;
 
     /**
      * Returns the active instance of the FlyWheelSubSystem.
@@ -57,11 +59,58 @@ public class FlywheelSubsystem extends SubsystemBase
     {
         isEnabled = false;
     }
+
+    public void override()
+    {
+        isOverride = true;
+    }
+   
+    public void unOverride()
+    {
+        isOverride = false;
+    }
+
     @Override
     public void periodic(){
-        if(isEnabled){
+        if(isEnabled && !isOverride){
             topMotor.set(controller.calculate(topMotorEncoder.getVelocity(), FlywheelConstants.kSetPoint));
             bottomMotor.set(controller.calculate(bottomMotorEncoder.getVelocity(), FlywheelConstants.kSetPoint));
         }
+        if (isOverride)
+        {
+            topMotor.set(1);
+            bottomMotor.set(1);
+        }
     }
+
+    public void configMotors()
+    {
+        topMotor.restoreFactoryDefaults();
+        bottomMotor.restoreFactoryDefaults();
+
+        topMotor.setInverted(true);
+        bottomMotor.setInverted(true);
+
+        topMotor.burnFlash();
+        bottomMotor.burnFlash();
+    }
+    
+
+    public void shootOn() 
+    {
+        topMotor.set(-1);
+        bottomMotor.set(-1);
+    }
+
+    public void stopFly()
+    {
+     topMotor.set(0);
+     bottomMotor.set(0);
+    }
+
+    public Command flyCommand()
+    {
+        return this.startEnd(()->this.shootOn(), ()->this.stopFly());
+    }
+
 }
