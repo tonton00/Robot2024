@@ -204,15 +204,21 @@ public class DriveSubsystem extends SubsystemBase
      */
     public void drive(ChassisSpeeds speeds, double maxSpeed)
     {
+        //Convert the rotation speed into m/s instead of radians/second
         double omegaMetersPerSecond = speeds.omegaRadiansPerSecond * AutoConstants.kRobotRadius;
+        System.out.println("Rotation Speed M/S: " + omegaMetersPerSecond);
+        //If we are primarliy rotating instead of driving, do a differential drive rotation.
         if (omegaMetersPerSecond > speeds.vxMetersPerSecond && omegaMetersPerSecond > speeds.vyMetersPerSecond)
         {
-            frontLeft.set(speeds.omegaRadiansPerSecond / maxSpeed);
-            frontRight.set(speeds.omegaRadiansPerSecond / maxSpeed);
-            backLeft.set(speeds.omegaRadiansPerSecond / maxSpeed);
-            backRight.set(speeds.omegaRadiansPerSecond / maxSpeed);
+            frontLeft.set(omegaMetersPerSecond / maxSpeed);
+            frontRight.set(omegaMetersPerSecond / maxSpeed);
+            backLeft.set(omegaMetersPerSecond / maxSpeed);
+            backRight.set(omegaMetersPerSecond / maxSpeed);
+
+            return;
         }
 
+        //Convert the ChassisSpeeds to individual wheel speeds.
         MecanumDriveWheelSpeeds wheelSpeeds = KinematicsConstants.kDriveKinematics.toWheelSpeeds(speeds);
         wheelSpeeds.desaturate(maxSpeed);
         
