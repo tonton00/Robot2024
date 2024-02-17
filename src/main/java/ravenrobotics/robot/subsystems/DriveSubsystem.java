@@ -61,10 +61,10 @@ public class DriveSubsystem extends SubsystemBase
     private GenericEntry backRightTargetSpeed = Telemetry.teleopTab.add("BR Target Speed", 0).getEntry();
 
     //Target power
-    private GenericEntry frontLeftPower = Telemetry.teleopTab.add("FL Target Power", 0).getEntry();
-    private GenericEntry frontRightPower = Telemetry.teleopTab.add("FR Target Power", 0).getEntry();
-    private GenericEntry backLeftPower = Telemetry.teleopTab.add("BL Target Power", 0).getEntry();
-    private GenericEntry backRightPower = Telemetry.teleopTab.add("BR Target Power", 0).getEntry();
+    private GenericEntry frontLeftPower = Telemetry.teleopTab.add("FL Power", 0).getEntry();
+    private GenericEntry frontRightPower = Telemetry.teleopTab.add("FR Power", 0).getEntry();
+    private GenericEntry backLeftPower = Telemetry.teleopTab.add("BL Power", 0).getEntry();
+    private GenericEntry backRightPower = Telemetry.teleopTab.add("BR Power", 0).getEntry();
     
     //Battery voltage
     private GenericEntry batteryVoltage = Telemetry.teleopTab.add("Battery Voltage", 12).getEntry();

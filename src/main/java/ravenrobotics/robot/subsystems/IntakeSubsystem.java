@@ -11,6 +11,7 @@ import com.revrobotics.Rev2mDistanceSensor.Port;
 
 import edu.wpi.first.math.controller.BangBangController;
 import edu.wpi.first.networktables.GenericEntry;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import ravenrobotics.robot.Constants.IntakeConstants;
@@ -133,6 +134,11 @@ public class IntakeSubsystem extends SubsystemBase
     public void runRollers()
     {
         //changed because rollers were super speedy
+        rollerMotor.set(1);
+    }
+
+    public void runRollersSlow()
+    {
         rollerMotor.set(.5);
     }
 
@@ -152,6 +158,7 @@ public class IntakeSubsystem extends SubsystemBase
     @Override
     public void periodic()
     {
+        System.out.println("Arm Position: " + armMotorEncoder.getPosition());
         //Update arm motor's position on Shuffleboard.
         armPositionEntry.setDouble(armMotorEncoder.getPosition());
     }
@@ -166,7 +173,7 @@ public class IntakeSubsystem extends SubsystemBase
 
         //Set idle mode.
         rollerMotor.setIdleMode(IdleMode.kCoast);
-        armMotor.setIdleMode(IdleMode.kCoast);
+        armMotor.setIdleMode(IdleMode.kBrake);
 
         //Set the PID constants for the PID controller.
         armPIDController.setP(IntakeConstants.kArmP);
@@ -187,11 +194,4 @@ public class IntakeSubsystem extends SubsystemBase
         rollerMotorEncoder.setPosition(0.0);
         armMotorEncoder.setPosition(0.0);
     }
-
-    //comand used in RobotContainer to run Rollers alongWith FlyWheels
-    public Command flyRollerCommand()
-    {
-        return this.startEnd(()->this.runRollers(), ()->this.stopRollers());
-    }
-
 }

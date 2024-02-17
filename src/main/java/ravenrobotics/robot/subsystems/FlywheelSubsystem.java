@@ -5,6 +5,7 @@ import com.revrobotics.RelativeEncoder;
 import com.revrobotics.CANSparkLowLevel.MotorType;
 
 import edu.wpi.first.math.controller.BangBangController;
+import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import ravenrobotics.robot.Constants.FlywheelConstants;
@@ -24,6 +25,8 @@ public class FlywheelSubsystem extends SubsystemBase
 
     //Allows you to use FlywheelSubsystem in other classes
     private static FlywheelSubsystem instance;
+
+    private final SlewRateLimiter rampLimiter = new SlewRateLimiter(0.5);
 
     //Tell the flywheel is enabled
     private boolean isEnabled = false;
@@ -78,8 +81,8 @@ public class FlywheelSubsystem extends SubsystemBase
         }
         if (isOverride)
         {
-            topMotor.set(1);
-            bottomMotor.set(1);
+            topMotor.set(rampLimiter.calculate(1));
+            bottomMotor.set(rampLimiter.calculate(1));
         }
     }
 
@@ -107,10 +110,4 @@ public class FlywheelSubsystem extends SubsystemBase
      topMotor.set(0);
      bottomMotor.set(0);
     }
-
-    public Command flyCommand()
-    {
-        return this.startEnd(()->this.shootOn(), ()->this.stopFly());
-    }
-
 }

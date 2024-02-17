@@ -5,6 +5,7 @@
 package ravenrobotics.robot;
 
 import edu.wpi.first.networktables.GenericEntry;
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -14,6 +15,7 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import ravenrobotics.robot.Constants.DriverStationConstants;
 import ravenrobotics.robot.commands.DriveCommand;
+import ravenrobotics.robot.commands.RunFlywheelCommand;
 import ravenrobotics.robot.subsystems.DriveSubsystem;
 import ravenrobotics.robot.subsystems.FlywheelSubsystem;
 import ravenrobotics.robot.subsystems.IMUSubsystem;
@@ -55,8 +57,7 @@ public class RobotContainer
   private void configureBindings()
   {
     // Shooting: parallel command to run intake rollers and flywheel while trigger held 
-    driverJoystick.button(1).whileTrue(IntakeSubsystem.getInstance().flyRollerCommand()
-    .alongWith(FlywheelSubsystem.getInstance().flyCommand()));
+    driverJoystick.button(1).whileTrue(new RunFlywheelCommand());
 
 
     //Set the buttons on the joystick for field-relative and zeroing the heading.
@@ -73,13 +74,18 @@ public class RobotContainer
     //systemsController.y().toggleOnTrue(new InstantCommand(() -> IntakeSubsystem.getInstance().runRollers()));
     //systemsController.y().toggleOnFalse(new InstantCommand(() -> IntakeSubsystem.getInstance().stopRollers()));
 
-    // systemsController.back().toggleOnTrue(new InstantCommand(() -> FlywheelSubsystem.getInstance().override()));
+    //systemsController.back().toggleOnTrue(new InstantCommand(() -> FlywheelSubsystem.getInstance().override()));
    // systemsController.back().toggleOnFalse(new InstantCommand(() -> FlywheelSubsystem.getInstance().unOverride()));
   }
 
   public void setupTeleopCommand()
   {
     Command selectedCommand = teleopModeChooser.getSelected();
+    if (selectedCommand == null)
+    {
+      DriveSubsystem.getInstance().setDefaultCommand(driveCommand);
+      return;
+    }
     DriveSubsystem.getInstance().setDefaultCommand(selectedCommand);
   }
 

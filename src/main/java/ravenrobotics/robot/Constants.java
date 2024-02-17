@@ -79,7 +79,7 @@ public class Constants
         public static final double kArmI = 0.0;
         public static final double kArmD = 0.0;
         
-        public static final double kArmDeployedSetpoint = 50;
+        public static final double kArmDeployedSetpoint = 62.57260513305664;
 
         public static final double kRollerFF = 1.0;
         public static final double kRollerSetpoint = 4000;
