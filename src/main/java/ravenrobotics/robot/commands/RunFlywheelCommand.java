@@ -27,9 +27,7 @@ public class RunFlywheelCommand extends Command
     public void execute()
     {
         flywheelSubsystem.shootOn();
-        Timer.delay(1);
-        intakeSubsystem.runRollersSlow();
-        Timer.delay(0.025);
+        Timer.delay(1.2);
         intakeSubsystem.runRollers();
     }
 

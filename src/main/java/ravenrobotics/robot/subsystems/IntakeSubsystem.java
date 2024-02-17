@@ -52,7 +52,7 @@ public class IntakeSubsystem extends SubsystemBase
         @Override
         public void execute()
         {
-            rollerPIDController.setReference(rollerBBController.calculate(rollerMotorEncoder.getVelocity(), IntakeConstants.kRollerSetpoint), ControlType.kVelocity);
+            rollerMotor.set(-1);
             //TODO: Get measurement from lasers.
             double noteDistance = 50;
             if (noteDistance < IntakeConstants.kNoteInDistance)
@@ -126,8 +126,8 @@ public class IntakeSubsystem extends SubsystemBase
     {
         switch(position)
         {
-            case kDeployed -> armPIDController.setReference(IntakeConstants.kArmDeployedSetpoint, ControlType.kSmartMotion);
-            case kRetracted -> armPIDController.setReference(0, ControlType.kSmartMotion);
+            case kDeployed -> armPIDController.setReference(IntakeConstants.kArmDeployedSetpoint, ControlType.kPosition);
+            case kRetracted -> armPIDController.setReference(0, ControlType.kPosition);
         }
     }
 
@@ -135,6 +135,11 @@ public class IntakeSubsystem extends SubsystemBase
     {
         //changed because rollers were super speedy
         rollerMotor.set(1);
+    }
+
+    public void intakeRunRollers()
+    {
+        rollerMotor.set(-1);
     }
 
     public void runRollersSlow()
@@ -175,15 +180,18 @@ public class IntakeSubsystem extends SubsystemBase
         rollerMotor.setIdleMode(IdleMode.kCoast);
         armMotor.setIdleMode(IdleMode.kBrake);
 
+        armMotor.setClosedLoopRampRate(0.01);
+        armPIDController.setFeedbackDevice(armMotorEncoder);
+        armPIDController.setOutputRange(-0.25, 0.5);
+
         //Set the PID constants for the PID controller.
         armPIDController.setP(IntakeConstants.kArmP);
         armPIDController.setI(IntakeConstants.kArmI);
         armPIDController.setD(IntakeConstants.kArmD);
 
-        armPIDController.setFeedbackDevice(armMotorEncoder);
-
         //Save configuration.
         rollerMotor.burnFlash();
+        armMotor.burnFlash();
     }
 
     /**

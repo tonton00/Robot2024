@@ -75,11 +75,11 @@ public class Constants
         public static final int kRollerMotor = 6;
         public static final int kArmMotor = 7;
         //PID Constants for the arm.
-        public static final double kArmP = 3.0;
+        public static final double kArmP = 1.5;
         public static final double kArmI = 0.0;
-        public static final double kArmD = 0.0;
+        public static final double kArmD = 0.5;
         
-        public static final double kArmDeployedSetpoint = 62.57260513305664;
+        public static final double kArmDeployedSetpoint = 57;
 
         public static final double kRollerFF = 1.0;
         public static final double kRollerSetpoint = 4000;

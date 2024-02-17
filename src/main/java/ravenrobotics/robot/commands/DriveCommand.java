@@ -40,7 +40,6 @@ public class DriveCommand extends Command
     /**
      * Command to drive the robot using joystick axes.
      * 
-     * @param driveSubsystem The drivetrain subsystem.
      * @param strafeSpeed The axis for moving left/right.
      * @param forwardSpeed The axis for moving forward/backward.
      * @param rotationSpeed The axis for rotating.
@@ -68,7 +67,7 @@ public class DriveCommand extends Command
         tLimiter = new SlewRateLimiter(DrivetrainConstants.kRotationSlewRate);
 
         //Add the subsystem as a requirement for the command, so the subsystem isn't being controlled by two different commands at once.
-        addRequirements(driveSubsystem);
+        addRequirements(driveSubsystem, imuSubsystem);
     }
 
     @Override
@@ -92,31 +91,43 @@ public class DriveCommand extends Command
         mSpeed = (maxSpeed.getAsDouble() + 1) * 0.5;
         if (mSpeed < 0.1)
         {
-            mSpeed += 0.1;
+            mSpeed = 0.1;
         }
+
 
         //Update the max speed on Shuffleboard as a percentage.
         maxSpeedEntry.setDouble(mSpeed * 100);
 
-        //If we are inside the deadband limit, stop the motors and return (exit this loop).
-        if(Math.abs(xSpeed.getAsDouble()) < 0.1 && Math.abs(ySpeed.getAsDouble()) < 0.1 && Math.abs(tSpeed.getAsDouble()) < 0.1)
-        {
-            driveSubsystem.stopMotors();
-            return;
-        }
+        //Conver the max speed to a speed in meters per second.
+        mSpeed *= DrivetrainConstants.kDriveMaxSpeedMPS;
 
         //Get the target strafe, forward/backward, and rotation speeds.
-        xSpeedMPS = xLimiter.calculate(xSpeed.getAsDouble()) * DrivetrainConstants.kDriveMaxSpeedMPS;
-        ySpeedMPS = yLimiter.calculate(ySpeed.getAsDouble()) * DrivetrainConstants.kDriveMaxSpeedMPS;
-        tSpeedMPS = tLimiter.calculate(tSpeed.getAsDouble()) * DrivetrainConstants.kDriveMaxSpeedMPS;
+        xSpeedMPS = xLimiter.calculate(xSpeed.getAsDouble()) * mSpeed;
+        ySpeedMPS = yLimiter.calculate(ySpeed.getAsDouble()) * mSpeed;
+        tSpeedMPS = tLimiter.calculate(tSpeed.getAsDouble()) * mSpeed;
+
+        if (Math.abs(xSpeed.getAsDouble()) < 0.03)
+        {
+            xLimiter.reset(0);
+            xSpeedMPS = 0;
+        }
+        
+        if (Math.abs(ySpeed.getAsDouble()) < 0.03)
+        {
+            yLimiter.reset(0);
+            ySpeedMPS = 0;
+        }
+
+        if (Math.abs(tSpeed.getAsDouble()) < 0.01)
+        {
+            tLimiter.reset(0);
+            tSpeedMPS = 0;
+        }
 
         //Update the filter data on Shuffleboard.
         xAxisFilterEntry.setDouble(xLimiter.calculate(xSpeed.getAsDouble()));
         yAxisFilterEntry.setDouble(yLimiter.calculate(ySpeed.getAsDouble()));
         zAxisFilterEntry.setDouble(tLimiter.calculate(tSpeed.getAsDouble()));
-
-        //Conver the max speed to a speed in meters per second.
-        mSpeed *= DrivetrainConstants.kDriveMaxSpeedMPS;
 
         //Convert the target speeds to a chassis speed.
         ChassisSpeeds targetSpeeds = new ChassisSpeeds(xSpeedMPS, ySpeedMPS, tSpeedMPS);

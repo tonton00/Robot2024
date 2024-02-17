@@ -20,6 +20,7 @@ import ravenrobotics.robot.subsystems.DriveSubsystem;
 import ravenrobotics.robot.subsystems.FlywheelSubsystem;
 import ravenrobotics.robot.subsystems.IMUSubsystem;
 import ravenrobotics.robot.subsystems.IntakeSubsystem;
+import ravenrobotics.robot.subsystems.IntakeSubsystem.IntakeArmPosition;
 import ravenrobotics.robot.util.Telemetry;
 
 public class RobotContainer 
@@ -69,8 +70,11 @@ public class RobotContainer
     driverJoystick.button(9).onTrue(DriveSubsystem.getInstance().getSysIDQuasistatic(Direction.kForward));
     driverJoystick.button(10).onTrue(DriveSubsystem.getInstance().getSysIDQuasistatic(Direction.kReverse));
 
-    systemsController.a().toggleOnTrue(new InstantCommand(() -> IntakeSubsystem.getInstance().runIntakeRoutine()));
-    systemsController.a().toggleOnFalse(new InstantCommand(() -> IntakeSubsystem.getInstance().cancelWaitRoutine()));
+    driverJoystick.button(5).onTrue(new InstantCommand(() -> IntakeSubsystem.getInstance().setIntakePosition(IntakeArmPosition.kDeployed)));
+    driverJoystick.button(4).onTrue(new InstantCommand(() -> IntakeSubsystem.getInstance().setIntakePosition(IntakeArmPosition.kRetracted)));
+
+    driverJoystick.button(6).toggleOnTrue(new InstantCommand(() -> IntakeSubsystem.getInstance().intakeRunRollers()));
+    driverJoystick.button(6).toggleOnFalse(new InstantCommand(() -> IntakeSubsystem.getInstance().stopRollers()));
     //systemsController.y().toggleOnTrue(new InstantCommand(() -> IntakeSubsystem.getInstance().runRollers()));
     //systemsController.y().toggleOnFalse(new InstantCommand(() -> IntakeSubsystem.getInstance().stopRollers()));
 
