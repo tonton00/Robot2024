@@ -71,15 +71,13 @@ public class RobotContainer
     driverJoystick.button(10).onTrue(DriveSubsystem.getInstance().getSysIDQuasistatic(Direction.kReverse));
 
     driverJoystick.button(5).onTrue(new InstantCommand(() -> IntakeSubsystem.getInstance().setIntakePosition(IntakeArmPosition.kDeployed)));
-    driverJoystick.button(4).onTrue(new InstantCommand(() -> IntakeSubsystem.getInstance().setIntakePosition(IntakeArmPosition.kRetracted)));
+    driverJoystick.button(6).onTrue(new InstantCommand(() -> IntakeSubsystem.getInstance().setIntakePosition(IntakeArmPosition.kRetracted)));
 
     driverJoystick.button(3).toggleOnTrue(new InstantCommand(() -> IntakeSubsystem.getInstance().intakeRunRollers()));
     driverJoystick.button(3).toggleOnFalse(new InstantCommand(() -> IntakeSubsystem.getInstance().stopRollers()));
-
-    driverJoystick.button(6).toggleOnTrue(new InstantCommand(() -> IntakeSubsystem.getInstance().intakeRunRollersReverse()));
-    driverJoystick.button(6).toggleOnFalse(new InstantCommand(() -> IntakeSubsystem.getInstance().stopRollers()));
-
-
+    
+    driverJoystick.button(4).toggleOnTrue(new InstantCommand(() -> IntakeSubsystem.getInstance().intakeRunRollersReverse()));
+    driverJoystick.button(4).toggleOnFalse(new InstantCommand(() -> IntakeSubsystem.getInstance().stopRollers()));
     //systemsController.y().toggleOnTrue(new InstantCommand(() -> IntakeSubsystem.getInstance().runRollers()));
     //systemsController.y().toggleOnFalse(new InstantCommand(() -> IntakeSubsystem.getInstance().stopRollers()));
 

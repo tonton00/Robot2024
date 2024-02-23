@@ -22,7 +22,7 @@ public class RobotVision extends SubsystemBase {
      PhotonCamera camera = new PhotonCamera("");
  
   //for some reason *targets* wasn't recognised and I couldnt figure out what package it was under in photovision
-      // int targetID = targets.getFiducialId();
+      //var targetID = targets.getFiducialId();
   //TODO: figure out what libary targets are under then set target id to fiducialID()
      //made targetID so I can work on the method
      int targetID;

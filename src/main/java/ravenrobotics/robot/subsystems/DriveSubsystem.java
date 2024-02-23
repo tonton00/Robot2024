@@ -27,7 +27,7 @@ import edu.wpi.first.units.MutableMeasure;
 import edu.wpi.first.units.Velocity;
 import edu.wpi.first.units.Voltage;
 import edu.wpi.first.wpilibj.DriverStation;
-
+import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.simulation.BatterySim;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
@@ -206,12 +206,51 @@ public class DriveSubsystem extends SubsystemBase
     public void drive(ChassisSpeeds speeds, double maxSpeed)
     {
         System.out.println("Chassis Speeds: " + speeds);
-
-        //TODO: Test Conditionals 
+       
+        
+        if (Math.abs(speeds.omegaRadiansPerSecond) > speeds.vxMetersPerSecond & Math.abs(speeds.omegaRadiansPerSecond) > speeds.vyMetersPerSecond)
+        {
+            frontLeft.set(speeds.omegaRadiansPerSecond / maxSpeed);
+            frontRight.set(speeds.omegaRadiansPerSecond / maxSpeed);
+            backLeft.set(-speeds.omegaRadiansPerSecond / maxSpeed);
+            backRight.set(-speeds.omegaRadiansPerSecond / maxSpeed);
+            return;
+        }
+        
+       
         //If we are primarliy rotating instead of driving, do a differential drive rotation.
-        //# If twist/Z rotation value or converted rad value is greater than the converted X-value and the Y-value of the joystick 
-       /* TEST 1
-        if (Math.abs(speeds.omegaRadiansPerSecond) > speeds.vxMetersPerSecond && Math.abs(speeds.omegaRadiansPerSecond) > speeds.vyMetersPerSecond)
+       
+       //Test 1  - Insetead of setting the conditional to and operator im setting it to and or to see if there is any difference 
+       /*  
+       if (Math.abs(speeds.omegaRadiansPerSecond) > speeds.vxMetersPerSecond || Math.abs(speeds.omegaRadiansPerSecond) > speeds.vyMetersPerSecond)
+        {
+            frontLeft.set(speeds.omegaRadiansPerSecond / maxSpeed);
+            frontRight.set(speeds.omegaRadiansPerSecond / maxSpeed);
+            backLeft.set(-speeds.omegaRadiansPerSecond / maxSpeed);
+            backRight.set(-speeds.omegaRadiansPerSecond / maxSpeed);
+            return;
+        }
+        */
+
+        //Kinda janky "fix" for not being able to move backwards Overides Straifing
+        //Test 2
+        
+        /* 
+        if (Math.abs(speeds.omegaRadiansPerSecond) != speeds.vxMetersPerSecond && Math.abs(speeds.omegaRadiansPerSecond) != speeds.vyMetersPerSecond)
+        {
+            frontLeft.set(speeds.omegaRadiansPerSecond / maxSpeed);
+            frontRight.set(speeds.omegaRadiansPerSecond / maxSpeed);
+            backLeft.set(-speeds.omegaRadiansPerSecond / maxSpeed);
+            backRight.set(-speeds.omegaRadiansPerSecond / maxSpeed);
+            return;
+        }
+        */
+
+        //Test 3 relies on direct joystick input if the z-Value on the joystick is greater than zero then differenial drive turn 
+        // Should be just as janky as the last 
+       
+       /*
+        if (Joystick.AxisType.kZ.value > 0)
         {
             frontLeft.set(speeds.omegaRadiansPerSecond / maxSpeed);
             frontRight.set(speeds.omegaRadiansPerSecond / maxSpeed);
@@ -221,20 +260,9 @@ public class DriveSubsystem extends SubsystemBase
         }
        */
 
-
-        //TEST 2     Should do the same exact thing as test 1
-        /* 
-        if (Math.abs(speeds.omegaRadiansPerSecond) > speeds.vxMetersPerSecond)
-        {
-            frontLeft.set(speeds.omegaRadiansPerSecond / maxSpeed);
-            frontRight.set(speeds.omegaRadiansPerSecond / maxSpeed);
-            backLeft.set(-speeds.omegaRadiansPerSecond / maxSpeed);
-            backRight.set(-speeds.omegaRadiansPerSecond / maxSpeed);
-            return;
-        }
-
-
-       if (Math.abs(speeds.omegaRadiansPerSecond) > speeds.vyMetersPerSecond)
+        /*
+        //Test 4 shoud do the same as the original but instead of using math vals we just use joystick 
+        if (Joystick.AxisType.kZ.value > speeds.vxMetersPerSecond && Joystick.AxisType.kZ.value > speeds.vyMetersPerSecond)
         {
             frontLeft.set(speeds.omegaRadiansPerSecond / maxSpeed);
             frontRight.set(speeds.omegaRadiansPerSecond / maxSpeed);
@@ -243,47 +271,6 @@ public class DriveSubsystem extends SubsystemBase
             return;
         }
         */
-                //Test Three
-                //if twist is grater than or equal to x |logical operatior or| twist is greater than or equal two y
-        /* 
-         if (Math.abs(speeds.omegaRadiansPerSecond) >= speeds.vxMetersPerSecond ||  Math.abs(speeds.omegaRadiansPerSecond) >= speeds.vyMetersPerSecond)
-        {
-            frontLeft.set(speeds.omegaRadiansPerSecond / maxSpeed);
-            frontRight.set(speeds.omegaRadiansPerSecond / maxSpeed);
-            backLeft.set(-speeds.omegaRadiansPerSecond / maxSpeed);
-            backRight.set(-speeds.omegaRadiansPerSecond / maxSpeed);
-            return;
-        }
-        */
-        // Test Four
-         // If the JoystickValue for Z isnt zero then rotate
-        /* 
-         if (Joystick.AxisType.kZ.value != 0) 
-         {
-           frontLeft.set(speeds.omegaRadiansPerSecond / maxSpeed);
-            frontRight.set(speeds.omegaRadiansPerSecond / maxSpeed);
-            backLeft.set(-speeds.omegaRadiansPerSecond / maxSpeed);
-            backRight.set(-speeds.omegaRadiansPerSecond / maxSpeed);
-            return;
-         }
-        */
-        //Last Test
-         /* 
-         if (Joystick.AxisType.kZ.value > speeds.vxMetersPerSecond && Joystick.AxisType.kZ.value > speeds.vyMetersPerSecond) 
-         {
-           frontLeft.set(speeds.omegaRadiansPerSecond / maxSpeed);
-            frontRight.set(speeds.omegaRadiansPerSecond / maxSpeed);
-            backLeft.set(-speeds.omegaRadiansPerSecond / maxSpeed);
-            backRight.set(-speeds.omegaRadiansPerSecond / maxSpeed);
-            return;
-         }
-         */
-
-
-
-
-
-
 
         //Convert the ChassisSpeeds to individual wheel speeds.
         MecanumDriveWheelSpeeds wheelSpeeds = KinematicsConstants.kDriveKinematics.toWheelSpeeds(speeds);
