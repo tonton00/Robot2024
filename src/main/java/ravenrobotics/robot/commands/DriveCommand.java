@@ -105,25 +105,29 @@ public class DriveCommand extends Command
         xSpeedMPS = xLimiter.calculate(xSpeed.getAsDouble()) * mSpeed;
         ySpeedMPS = yLimiter.calculate(ySpeed.getAsDouble()) * mSpeed;
         tSpeedMPS = tLimiter.calculate(tSpeed.getAsDouble()) * mSpeed;
-
-        if (Math.abs(xSpeed.getAsDouble()) < 0.03)
+       
+        //TODO: Fine Tune the conditional values 
+        //Joystick DeadBand / Diffrence change if changes in Drive Subsystem dont work 
+        // Test First
+        if (Math.abs(xSpeed.getAsDouble()) < 0.03) // Orginal vals 0.03
         {
             xLimiter.reset(0);
             xSpeedMPS = 0;
         }
         
-        if (Math.abs(ySpeed.getAsDouble()) < 0.03)
+        if (Math.abs(ySpeed.getAsDouble()) < 0.03) // Orginal vals 0.03
         {
             yLimiter.reset(0);
             ySpeedMPS = 0;
         }
 
-        if (Math.abs(tSpeed.getAsDouble()) < 0.01)
+        if (Math.abs(tSpeed.getAsDouble()) < 0.01) // Orginal vals 0.01
         {
             tLimiter.reset(0);
             tSpeedMPS = 0;
         }
 
+        
         //Update the filter data on Shuffleboard.
         xAxisFilterEntry.setDouble(xLimiter.lastValue());
         yAxisFilterEntry.setDouble(yLimiter.lastValue());

@@ -2,12 +2,12 @@ package ravenrobotics.robot.subsystems;
 
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
-import com.revrobotics.Rev2mDistanceSensor;
+
 import com.revrobotics.SparkPIDController;
 import com.revrobotics.CANSparkBase.ControlType;
 import com.revrobotics.CANSparkBase.IdleMode;
 import com.revrobotics.CANSparkLowLevel.MotorType;
-import com.revrobotics.Rev2mDistanceSensor.Port;
+
 
 import edu.wpi.first.math.controller.BangBangController;
 import edu.wpi.first.networktables.GenericEntry;
@@ -134,6 +134,11 @@ public class IntakeSubsystem extends SubsystemBase
     public void runRollers()
     {
         //changed because rollers were super speedy
+        rollerMotor.set(1);
+    }
+
+    public void intakeRunRollersReverse() 
+    {
         rollerMotor.set(1);
     }
 
